@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/actions">
+        <file>ic_cloud_done_black_48dp.png</file>
+        <file>ic_cloud_download_black_48dp.png</file>
+        <file>ic_cloud_upload_black_48dp.png</file>
+        <file>ic_file_download_black_48dp.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>ic_autorenew_black_48dp.png</file>
+        <file>ic_cached_black_48dp.png</file>
+        <file>ic_done_all_black_48dp.png</file>
+        <file>ic_file_download_black_48dp.png</file>
+    </qresource>
+</RCC>
