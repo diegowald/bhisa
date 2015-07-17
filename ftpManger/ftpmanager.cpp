@@ -5,3 +5,6 @@ FtpManager::FtpManager(const QString &url, const QString &user, const QString &p
 
 }
 
+FtpManager::~FtpManager()
+{
+}

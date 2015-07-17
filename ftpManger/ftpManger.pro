@@ -14,12 +14,17 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    ftpmanager.cpp
+    ftpmanager.cpp \
+    dlglogin.cpp \
+    file.cpp
 
 HEADERS  += mainwindow.h \
-    ftpmanager.h
+    ftpmanager.h \
+    dlglogin.h \
+    file.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    dlglogin.ui
 
 RESOURCES += \
     iconos.qrc
