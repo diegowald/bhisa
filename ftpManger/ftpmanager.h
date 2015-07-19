@@ -12,6 +12,8 @@ public:
 signals:
 
 public slots:
+private:
+    void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 };
 
 #endif // FTPMANAGER_H
