@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,12 +18,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     ftpmanager.cpp \
     dlglogin.cpp \
-    file.cpp
+    file.cpp \
+    ftpexception.cpp
 
 HEADERS  += mainwindow.h \
     ftpmanager.h \
     dlglogin.h \
-    file.h
+    file.h \
+    ftpexception.h
 
 FORMS    += mainwindow.ui \
     dlglogin.ui

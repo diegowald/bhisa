@@ -27,4 +27,6 @@ private:
 
 };
 
+typedef QSharedPointer<File> FilePtr;
+
 #endif // FILE_H
