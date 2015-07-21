@@ -4,6 +4,7 @@
 #include <QObject>
 #include "file.h"
 
+
 class FtpManager : public QObject
 {
     Q_OBJECT
@@ -16,6 +17,7 @@ public:
     void uploadFile(const QString &remoteDir, const QString &filename);
     void deleteFile(const QString &remoteDir, const QString &filename);
 
+    QString getCurrentDirectory();
     void getDirectoryContents(const QString &remoteDir);
     void createDirectory(const QString &remoteDir, const QString &directoryName);
     void deleteDirectory(const QString &remoteDir);
@@ -26,7 +28,7 @@ signals:
     void fileUploaded(const QString &remoteDir, const QString &filename);
     void fileDeleted(const QString &remoteDir, const QString &filename);
 
-    void getDirectoryContentsDownloaded(const QString &remoteDir, QList<FilePtr> &dirContents);
+    void getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents);
     void directoryCreated(const QString &remoteDir, const QString &directoryName);
     void directoryDeleted(const QString &remoteDir);
     void directoryChanged(const QString &remoteDir);
@@ -41,6 +43,7 @@ private:
 
     static void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 
+    static FileList parseDirectoryContents(std::ostringstream &content);
 private:
     bool _initialized;
     QString _url;

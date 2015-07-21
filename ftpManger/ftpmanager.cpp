@@ -2,6 +2,7 @@
 #include <Poco/Net/FTPClientSession.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
 
@@ -27,13 +28,13 @@ void FtpManager::stream_copy_n(std::istream & in, std::size_t count, std::ostrea
     do
     {
         in.read(buffer, buffer_size);
-        out.write(buffer, buffer_size);
         readCount = in.gcount();
-        count -= buffer_size;
+        if (readCount > 0)
+            out.write(buffer, readCount);
     } while(readCount > 0);
 
-    in.read(buffer, count);
-    out.write(buffer, count);
+/*    in.read(buffer, count);
+    out.write(buffer, count);*/
 }
 
 
@@ -77,6 +78,38 @@ void FtpManager::getDirectoryContents(const QString &remoteDir)
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
+
+    QFuture<void> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir);
+}
+
+QString FtpManager::getCurrentDirectory()
+{
+    if (!_initialized)
+        emit requestInitialize();
+    if (!_initialized)
+        throw FtpException();
+
+    QString workDir = "";
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string host = _url.toStdString(); // "127.0.0.1";
+        std::string uname = _user.toStdString(); // "diego";
+        std::string password = _password.toStdString(); // "mic1492";
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        std::string currDir = session.getWorkingDirectory();
+        session.close();
+        workDir = QString::fromStdString(currDir);
+//        emit ftpManager->fileDownloaded(remoteDir, filename);
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << ex.what();
+    }
+    return workDir;
 }
 
 void FtpManager::createDirectory(const QString &remoteDir, const QString &directoryName)
@@ -85,6 +118,7 @@ void FtpManager::createDirectory(const QString &remoteDir, const QString &direct
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
+
 }
 
 void FtpManager::deleteDirectory(const QString &remoteDir)
@@ -124,6 +158,7 @@ void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &re
         std::ofstream ofs;
         ofs.open(file.c_str(), std::ofstream::out | std::ofstream::app | std::ofstream::binary);
         stream_copy_n(is, is.gcount(), ofs);
+        ofs.close();
         session.endDownload();
         session.close();
         emit ftpManager->fileDownloaded(remoteDir, filename);
@@ -140,4 +175,85 @@ void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remo
 
 void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir)
 {
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string dir = remoteDir.toStdString();// "/home/diego/tmp/";
+        std::string host = ftpManager->_url.toStdString(); // "127.0.0.1";
+        std::string uname = ftpManager->_user.toStdString(); // "diego";
+        std::string password = ftpManager->_password.toStdString(); // "mic1492";
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        std::istream &is = session.beginList(remoteDir.toStdString(), true);
+        std::ostringstream os;
+        stream_copy_n(is, 0, os);
+        session.endList();
+        session.close();
+        std::cerr << os.str();
+        FileList dirContents = parseDirectoryContents(os);
+        emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
+//        emit ftpManager->fileDownloaded(remoteDir, filename);
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << ex.what();
+    }
+}
+
+FileList FtpManager::parseDirectoryContents(std::ostringstream &content)
+{
+    std::stringstream ss;
+    ss << content.str();
+    FileList res = FileList::create();
+
+
+    std::string line;
+    while (std::getline(ss, line))
+    {
+        QString permissions;
+        QString numberOfLinks;
+        QString user;
+        QString group;
+        QString size;
+        QString month;
+        QString day;
+        QString time;
+        QString filename;
+
+        QString l = QString::fromStdString(line);
+        QStringList fields = l.split(' ', QString::SplitBehavior::SkipEmptyParts);
+
+        permissions = fields[0];
+        l = l.replace(l.indexOf(permissions), permissions.size(), "");
+        numberOfLinks = fields[1];
+        l = l.replace(l.indexOf(numberOfLinks), numberOfLinks.size(), "");
+        user = fields[2];
+        l = l.replace(l.indexOf(user), user.size(), "");
+        group  = fields[3];
+        l = l.replace(l.indexOf(group), group.size(), "");
+        size  = fields[4];
+        l = l.replace(l.indexOf(size), size.size(), "");
+        month  = fields[5];
+        l = l.replace(l.indexOf(month), month.size(), "");
+        day  = fields[6];
+        l = l.replace(l.indexOf(day), day.size(), "");
+        time  = fields[7];
+        l = l.replace(l.indexOf(time), time.size(), "");
+        filename = l.trimmed();
+
+        qDebug() << permissions << ", " << numberOfLinks << ", " << user
+                                  << ", " <<  group  << ", " <<  size  << ", " <<
+                                     month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
+
+
+        res->append(FilePtr::create(permissions, numberOfLinks,
+                                   user, group, size,
+                                   month, day, time,
+                                   filename));
+
+    }
+
+    return res;
 }

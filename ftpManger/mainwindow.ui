@@ -20,8 +20,47 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="QTreeView" name="treeView"/>
-      <widget class="QColumnView" name="columnView"/>
+      <widget class="QTreeWidget" name="treeWidget">
+       <property name="editTriggers">
+        <set>QAbstractItemView::AllEditTriggers</set>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="animated">
+        <bool>true</bool>
+       </property>
+       <property name="allColumnsShowFocus">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>Name</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Permissions</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Owner</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Under Edition</string>
+        </property>
+       </column>
+      </widget>
+      <widget class="QTableWidget" name="tableWidget">
+       <column>
+        <property name="text">
+         <string>filename</string>
+        </property>
+       </column>
+      </widget>
      </widget>
     </item>
    </layout>

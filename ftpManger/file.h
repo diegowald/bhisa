@@ -3,30 +3,48 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <QSharedPointer>
 
 class File: public QObject
 {
     Q_OBJECT
 public:
     File(QObject *parent = 0);
+    File(const QString &permissions, const QString &numberOfLinks,
+         const QString &user, const QString &group,
+         const QString &size, const QString &month,
+         const QString &day, const QString &time,
+         const QString &filename, QObject *parent = 0);
     virtual ~File();
 
     bool isLocked() const;
+    bool isFolder() const;
     QString filename() const;
     QString underEditionAuthor() const;
     QDateTime underEditionDateTime() const;
-
+    QString permissions() const;
+    QString owner() const;
+    QString underEdition() const;
 private:
     QString _filename;
 
-    unsigned int size;
-
     bool _underEdition;
+    bool _isFolder;
     QString _underEditionAuthor;
     QDateTime _underEditionDate;
+
+    QString _permissions;
+    int _numberOfLinks;
+    QString _user;
+    QString _group;
+    unsigned int _size;
+    QString _month;
+    QString _day;
+    QString _time;
 
 };
 
 typedef QSharedPointer<File> FilePtr;
+typedef QSharedPointer<QList<FilePtr>> FileList;
 
 #endif // FILE_H
