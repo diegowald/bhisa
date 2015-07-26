@@ -43,17 +43,20 @@ void FtpManager::initialize(const QString &url, const QString &user, const QStri
     _url = url;
     _user = user;
     _password = password;
+    gatherServerType();
     _initialized = true;
 }
 
-void FtpManager::downloadFile(const QString &remoteDir, const QString &filename)
+void FtpManager::downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder, bool blockingCall)
 {
     if (!_initialized)
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
 
-    QFuture<void> future = QtConcurrent::run(internal_downloadFile, this, remoteDir, filename);
+    QFuture<void> future = QtConcurrent::run(internal_downloadFile, this, remoteDir, filename, localFolder);
+    if (blockingCall)
+        future.waitForFinished();
 }
 
 void FtpManager::uploadFile(const QString &remoteDir, const QString &filename)
@@ -72,14 +75,14 @@ void FtpManager::deleteFile(const QString &remoteDir, const QString &filename)
         throw FtpException();
 }
 
-void FtpManager::getDirectoryContents(const QString &remoteDir)
+void FtpManager::getDirectoryContents(const QString &remoteDir, const QString &localFolder)
 {
     if (!_initialized)
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
 
-    QFuture<void> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir);
+    QFuture<void> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir, localFolder);
 }
 
 QString FtpManager::getCurrentDirectory()
@@ -138,7 +141,7 @@ void FtpManager::changeDirectory(const QString &remoteDir)
 }
 
 
-void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename)
+void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename, const QString &localFolder)
 {
     try
     {
@@ -156,11 +159,22 @@ void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &re
         session.setFileType(Poco::Net::FTPClientSession::TYPE_BINARY);
         std::istream& is = session.beginDownload(file);
         std::ofstream ofs;
-        ofs.open(file.c_str(), std::ofstream::out | std::ofstream::app | std::ofstream::binary);
+
+        QString completePath;
+        if (remoteDir.endsWith("/"))
+            completePath = localFolder + remoteDir + filename;
+        else
+            completePath = localFolder + remoteDir + "/" + filename;
+        ofs.open(completePath.toStdString(), std::ofstream::out | std::ofstream::app | std::ofstream::binary);
         stream_copy_n(is, is.gcount(), ofs);
         ofs.close();
         session.endDownload();
         session.close();
+        QFile f(completePath);
+        f.setPermissions(QFileDevice::Permission::ReadGroup
+                         | QFileDevice::Permission::ReadOther
+                         | QFileDevice::Permission::ReadOwner
+                         | QFileDevice::Permission::ReadUser);
         emit ftpManager->fileDownloaded(remoteDir, filename);
     }
     catch (std::exception &ex)
@@ -173,7 +187,7 @@ void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remo
 {
 }
 
-void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir)
+void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder)
 {
     try
     {
@@ -192,9 +206,9 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
         session.endList();
         session.close();
         std::cerr << os.str();
-        FileList dirContents = parseDirectoryContents(os);
+        FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
         emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
-//        emit ftpManager->fileDownloaded(remoteDir, filename);
+        ftpManager->processControlFile(remoteDir, localFolder);
     }
     catch (std::exception &ex)
     {
@@ -202,7 +216,15 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
     }
 }
 
-FileList FtpManager::parseDirectoryContents(std::ostringstream &content)
+FileList FtpManager::parseDirectoryContents(std::ostringstream &content, bool isWindows)
+{
+    if (isWindows)
+        return parseDirectoryContentsWindows(content);
+    else
+        return parseDirectoryContentsLinux(content);
+}
+
+FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
 {
     std::stringstream ss;
     ss << content.str();
@@ -224,7 +246,6 @@ FileList FtpManager::parseDirectoryContents(std::ostringstream &content)
 
         QString l = QString::fromStdString(line);
         QStringList fields = l.split(' ', QString::SplitBehavior::SkipEmptyParts);
-
         permissions = fields[0];
         l = l.replace(l.indexOf(permissions), permissions.size(), "");
         numberOfLinks = fields[1];
@@ -243,17 +264,103 @@ FileList FtpManager::parseDirectoryContents(std::ostringstream &content)
         l = l.replace(l.indexOf(time), time.size(), "");
         filename = l.trimmed();
 
-        qDebug() << permissions << ", " << numberOfLinks << ", " << user
-                                  << ", " <<  group  << ", " <<  size  << ", " <<
-                                     month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
+        if (filename.toLower() != ".control.db")
+        {
+            qDebug() << permissions << ", " << numberOfLinks << ", " << user
+                     << ", " <<  group  << ", " <<  size  << ", " <<
+                        month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
 
 
-        res->append(FilePtr::create(permissions, numberOfLinks,
-                                   user, group, size,
-                                   month, day, time,
-                                   filename));
-
+            res->append(FilePtr::create(permissions, numberOfLinks,
+                                        user, group, size,
+                                        month + "-" + day, time,
+                                        filename));
+        }
     }
 
     return res;
+}
+
+FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
+{
+    std::stringstream ss;
+    ss << content.str();
+    FileList res = FileList::create();
+
+
+    std::string line;
+    while (std::getline(ss, line))
+    {
+        QString permissions = "";
+        QString numberOfLinks = "";
+        QString user = "";
+        QString group = "";
+        QString size = "";
+        QString date = "";
+        QString time = "";
+        QString filename = "";
+
+        QString l = QString::fromStdString(line);
+        QStringList fields = l.split(' ', QString::SplitBehavior::SkipEmptyParts);
+
+        date = fields[0];
+        l = l.replace(l.indexOf(date), date.size(), "");
+
+        time = fields[1];
+        l = l.replace(l.indexOf(time), time.size(), "");
+
+        QString word = fields[2];
+        if (word == "<DIR>")
+            permissions = "d";
+        else
+            size = word;
+        l = l.replace(l.indexOf(word), word.size(), "");
+
+        filename = l.trimmed();
+        if (filename.toLower() != ".control.db")
+        {
+            qDebug() << permissions << ", " << numberOfLinks << ", " << user
+                     << ", " <<  group  << ", " <<  size  << ", " <<
+                        ", " <<  time << ", " <<  filename;
+
+
+            res->append(FilePtr::create(permissions, numberOfLinks,
+                                        user, group, size,
+                                        date, time,
+                                        filename));
+        }
+    }
+
+    return res;
+}
+
+
+void FtpManager::gatherServerType()
+{
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string host = _url.toStdString(); // "127.0.0.1";
+        std::string uname = _user.toStdString(); // "diego";
+        std::string password = _password.toStdString(); // "mic1492";
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        session.setFileType(Poco::Net::FTPClientSession::TYPE_BINARY);
+
+        std::string result = session.systemType();
+
+        _isWindows = QString::fromStdString(result).contains("Win");
+        session.close();
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << ex.what();
+    }
+}
+
+void FtpManager::processControlFile(const QString &dir, const QString &localFolder)
+{
+    downloadFile(dir, ".control.db", localFolder,  true);
 }

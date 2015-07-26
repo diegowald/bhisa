@@ -13,12 +13,12 @@ public:
     virtual ~FtpManager();
 
     void initialize(const QString &url, const QString &user, const QString &password);
-    void downloadFile(const QString &remoteDir, const QString &filename);
+    void downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder, bool blockingCall);
     void uploadFile(const QString &remoteDir, const QString &filename);
     void deleteFile(const QString &remoteDir, const QString &filename);
 
     QString getCurrentDirectory();
-    void getDirectoryContents(const QString &remoteDir);
+    void getDirectoryContents(const QString &remoteDir, const QString &localFolder);
     void createDirectory(const QString &remoteDir, const QString &directoryName);
     void deleteDirectory(const QString &remoteDir);
     void changeDirectory(const QString &remoteDir);
@@ -37,18 +37,25 @@ signals:
 
 public slots:
 private:
-    static void internal_downloadFile(FtpManager *ftpManager, const QString &remtoeDir, const QString &filename);
+    static void internal_downloadFile(FtpManager *ftpManager, const QString &remtoeDir, const QString &filename, const QString &localFolder);
     static void internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
-    static void internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir);
+    static void internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder);
 
     static void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 
-    static FileList parseDirectoryContents(std::ostringstream &content);
+    static FileList parseDirectoryContents(std::ostringstream &content, bool isWindows);
+    static FileList parseDirectoryContentsLinux(std::ostringstream &content);
+    static FileList parseDirectoryContentsWindows(std::ostringstream &content);
+
+    void gatherServerType();
+    void processControlFile(const QString &dir, const QString &localFolder);
+
 private:
     bool _initialized;
     QString _url;
     QString _user;
     QString _password;
+    bool _isWindows;
 };
 
 #endif // FTPMANAGER_H

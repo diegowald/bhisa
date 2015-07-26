@@ -7,8 +7,7 @@ File::File(QObject *parent):QObject(parent)
 
 File::File(const QString &permissions, const QString &numberOfLinks,
            const QString &user, const QString &group,
-           const QString &size, const QString &month,
-           const QString &day,const QString &time,
+           const QString &size, const QString &date, const QString &time,
            const QString &filename, QObject *parent) : QObject(parent)
 {
     _permissions = permissions;
@@ -16,12 +15,11 @@ File::File(const QString &permissions, const QString &numberOfLinks,
     _user = user;
     _group = group;
     _size = size.toUInt();
-    _day = day;
-    _month = month;
+    _date = date;
     _time = time;
     _filename = filename;
 
-    _isFolder = _permissions.at(0) == 'd';
+    _isFolder = _permissions.length() > 0 ? _permissions.at(0) == 'd' : false;
     _underEdition = false;
     _underEditionAuthor = "";
 }
@@ -68,4 +66,9 @@ QString File::owner() const
 QString File::underEdition() const
 {
     return _underEdition ? tr("Yes") : tr("No");
+}
+
+unsigned int File::size() const
+{
+    return _size;
 }

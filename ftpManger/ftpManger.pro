@@ -19,13 +19,15 @@ SOURCES += main.cpp\
     ftpmanager.cpp \
     dlglogin.cpp \
     file.cpp \
-    ftpexception.cpp
+    ftpexception.cpp \
+    localfilesmanager.cpp
 
 HEADERS  += mainwindow.h \
     ftpmanager.h \
     dlglogin.h \
     file.h \
-    ftpexception.h
+    ftpexception.h \
+    localfilesmanager.h
 
 FORMS    += mainwindow.ui \
     dlglogin.ui

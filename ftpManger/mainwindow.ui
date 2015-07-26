@@ -38,9 +38,16 @@
          <string>Name</string>
         </property>
        </column>
+      </widget>
+      <widget class="QTableWidget" name="tableWidget">
        <column>
         <property name="text">
-         <string>Permissions</string>
+         <string>filename</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Size</string>
         </property>
        </column>
        <column>
@@ -51,13 +58,6 @@
        <column>
         <property name="text">
          <string>Under Edition</string>
-        </property>
-       </column>
-      </widget>
-      <widget class="QTableWidget" name="tableWidget">
-       <column>
-        <property name="text">
-         <string>filename</string>
         </property>
        </column>
       </widget>

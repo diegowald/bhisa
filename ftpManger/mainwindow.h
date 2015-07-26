@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "ftpmanager.h"
+#include "localfilesmanager.h"
 #include <QTreeWidgetItem>
 
 namespace Ui {
@@ -34,12 +34,14 @@ private slots:
 
     void on_actionActualizar_triggered();
 
+    void on_actionTomar_Para_edicion_triggered();
+
 private:
     QString path(QTreeWidgetItem *item);
 
 private:
     Ui::MainWindow *ui;
-    FtpManager _ftpManager;
+    LocalFilesManager _fileManager;
 };
 
 #endif // MAINWINDOW_H

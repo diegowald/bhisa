@@ -12,8 +12,7 @@ public:
     File(QObject *parent = 0);
     File(const QString &permissions, const QString &numberOfLinks,
          const QString &user, const QString &group,
-         const QString &size, const QString &month,
-         const QString &day, const QString &time,
+         const QString &size, const QString &date, const QString &time,
          const QString &filename, QObject *parent = 0);
     virtual ~File();
 
@@ -25,6 +24,8 @@ public:
     QString permissions() const;
     QString owner() const;
     QString underEdition() const;
+    unsigned int size() const;
+
 private:
     QString _filename;
 
@@ -38,8 +39,7 @@ private:
     QString _user;
     QString _group;
     unsigned int _size;
-    QString _month;
-    QString _day;
+    QString _date;
     QString _time;
 
 };
