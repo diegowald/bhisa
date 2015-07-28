@@ -270,11 +270,10 @@ FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
 
-
-            res->append(FilePtr::create(permissions, numberOfLinks,
-                                        user, group, size,
-                                        month + "-" + day, time,
-                                        filename));
+            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
+                                            user, group, size,
+                                            month + "-" + day, time,
+                                            filename);
         }
     }
 
@@ -324,10 +323,10 @@ FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
                         ", " <<  time << ", " <<  filename;
 
 
-            res->append(FilePtr::create(permissions, numberOfLinks,
-                                        user, group, size,
-                                        date, time,
-                                        filename));
+            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
+                                               user, group, size,
+                                               date, time,
+                                               filename);
         }
     }
 
