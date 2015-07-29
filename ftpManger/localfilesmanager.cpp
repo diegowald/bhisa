@@ -81,9 +81,16 @@ void LocalFilesManager::changeDirectory(const QString &remoteDir)
     _ftpManager.changeDirectory(remoteDir);
 }
 
-void LocalFilesManager::on_fileDownloaded(const QString &remtoeDir, const QString &filename)
+void LocalFilesManager::on_fileDownloaded(const QString &remoteDir, const QString &filename)
 {
-    emit fileDownloaded(remtoeDir, filename);
+    if (isControlFile(filename))
+    {
+        processControlFile(remoteDir, filename);
+    }
+    else
+    {
+        emit fileDownloaded(remoteDir, filename);
+    }
 }
 
 void LocalFilesManager::on_fileUploaded(const QString &remoteDir, const QString &filename)
@@ -100,15 +107,21 @@ void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteD
 {
     foreach (FilePtr file, *dirContents)
     {
+        QString folder = (remoteDir == "/") ?
+                    QString("%1%2").arg(_ftpSessionFolder).arg(file->filename())
+                  :
+                    QString("%1/%2/%3")
+                    .arg(_ftpSessionFolder).arg(remoteDir).arg(file->filename());
+        qDebug() << folder;
+
         if (file->isFolder())
         {
-            QString folder = (remoteDir == "/") ?
-                        QString("%1%2").arg(_ftpSessionFolder).arg(file->filename())
-                      :
-                        QString("%1/%2/%3")
-                        .arg(_ftpSessionFolder).arg(remoteDir).arg(file->filename());
-            qDebug() << folder;
             checkAndCreateFolderIfNotExists(folder);
+        }
+        else if (isControlFile(file->filename()))
+        {
+            _ftpManager.downloadFile(remoteDir, file->filename(), folder, false);
+            dirContents->remove(file->filename());
         }
     }
     emit getDirectoryContentsDownloaded(remoteDir, dirContents);
@@ -141,4 +154,17 @@ void LocalFilesManager::checkAndCreateFolderIfNotExists(const QString &foldernam
     {
         dir.mkpath(".");
     }
+}
+
+bool LocalFilesManager::isControlFile(const QString &filename)
+{
+    return filename.startsWith(".ctl.", Qt::CaseInsensitive);
+}
+
+void LocalFilesManager::processControlFile(const QString &dir, const QString &filename)
+{
+    QString filePath = dir.endsWith("/") ? dir + filename : dir + "/" + filename;
+    QFile file(filePath);
+
+    hagamos sincronica esta parte para simplificar el asunto
 }

@@ -208,7 +208,6 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
         std::cerr << os.str();
         FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
         emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
-        ftpManager->processControlFile(remoteDir, localFolder);
     }
     catch (std::exception &ex)
     {
@@ -357,9 +356,4 @@ void FtpManager::gatherServerType()
     {
         std::cerr << ex.what();
     }
-}
-
-void FtpManager::processControlFile(const QString &dir, const QString &localFolder)
-{
-    downloadFile(dir, ".control.db", localFolder,  true);
 }

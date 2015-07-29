@@ -47,9 +47,11 @@ public slots:
     void on_requestInitialize();
 
 private:
-    void processControlFile(const QString &dir);
+    void processControlFile(const QString &dir, const QString &filename);
 
     void checkAndCreateFolderIfNotExists(const QString &foldername);
+
+    bool isControlFile(const QString &filename);
 
 private:
     bool _initialized;
