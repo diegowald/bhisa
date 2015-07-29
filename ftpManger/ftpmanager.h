@@ -14,7 +14,7 @@ public:
 
     void initialize(const QString &url, const QString &user, const QString &password);
     void downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder, bool blockingCall);
-    void uploadFile(const QString &remoteDir, const QString &filename);
+    void uploadFile(const QString &remoteDir, const QString &filename, bool blockingCall);
     void deleteFile(const QString &remoteDir, const QString &filename);
 
     QString getCurrentDirectory();
@@ -22,6 +22,8 @@ public:
     void createDirectory(const QString &remoteDir, const QString &directoryName);
     void deleteDirectory(const QString &remoteDir);
     void changeDirectory(const QString &remoteDir);
+
+    bool fileExists(const QString &remoteDir, const QString &filename);
 
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
@@ -40,6 +42,7 @@ private:
     static void internal_downloadFile(FtpManager *ftpManager, const QString &remtoeDir, const QString &filename, const QString &localFolder);
     static void internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
     static void internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder);
+    static bool internal_FileExists(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
 
     static void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 

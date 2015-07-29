@@ -18,7 +18,7 @@ public:
     ~MainWindow();
 
 public slots:
-    void on_fileDownloaded(const QString &remtoeDir, const QString &filename);
+    void on_fileDownloaded(const QString &remoteDir, const QString &filename);
     void on_fileUploaded(const QString &remoteDir, const QString &filename);
     void on_fileDeleted(const QString &remoteDir, const QString &filename);
 
@@ -42,6 +42,7 @@ private:
 private:
     Ui::MainWindow *ui;
     LocalFilesManager _fileManager;
+    QString _lockAndOpenAfterDownloadFile;
 };
 
 #endif // MAINWINDOW_H

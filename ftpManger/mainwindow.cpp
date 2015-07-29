@@ -2,7 +2,8 @@
 #include "ui_mainwindow.h"
 #include "ftpmanager.h"
 #include "dlglogin.h"
-
+#include <QDesktopServices>
+#include <QUrl>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QTreeWidgetItem *item = new QTreeWidgetItem(QStringList() << _currentDir);
     ui->treeWidget->addTopLevelItem(item);
     ui->treeWidget->setCurrentItem(item);
+    ui->tableWidget->setAlternatingRowColors(true);
 }
 
 MainWindow::~MainWindow()
@@ -33,8 +35,15 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_fileDownloaded(const QString &remtoeDir, const QString &filename)
+void MainWindow::on_fileDownloaded(const QString &remoteDir, const QString &filename)
 {
+    if (_lockAndOpenAfterDownloadFile == filename)
+    {
+        if (_fileManager.lockFile(remoteDir, filename))
+        {
+            QDesktopServices::openUrl(_fileManager.getLocalURL(remoteDir, filename));
+        }
+    }
 }
 
 void MainWindow::on_fileUploaded(const QString &remoteDir, const QString &filename)
@@ -58,11 +67,14 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
         }
         else
         {
-            ui->tableWidget->insertRow(ui->tableWidget->rowCount());
-            ui->tableWidget->setItem(ui->tableWidget->rowCount() - 1, 0, new QTableWidgetItem(file->filename()));
-            ui->tableWidget->setItem(ui->tableWidget->rowCount() - 1, 1, new QTableWidgetItem(QString::number(file->size())));
-            ui->tableWidget->setItem(ui->tableWidget->rowCount() - 1, 2, new QTableWidgetItem(file->owner()));
-            ui->tableWidget->setItem(ui->tableWidget->rowCount() - 1, 3, new QTableWidgetItem(file->underEdition()));
+            int currentRow = ui->tableWidget->rowCount();
+            ui->tableWidget->insertRow(currentRow);
+            ui->tableWidget->setItem(currentRow, 0, new QTableWidgetItem(file->filename()));
+            ui->tableWidget->setItem(currentRow, 1, new QTableWidgetItem(QString::number(file->size())));
+            ui->tableWidget->setItem(currentRow, 2, new QTableWidgetItem(file->owner()));
+            ui->tableWidget->setItem(currentRow, 3, new QTableWidgetItem(file->underEdition()));
+            //ui->tableWidget->item(currentRow, 0)->setBackgroundColor(file->isLocked() ? Qt::red : Qt::white);
+            ui->tableWidget->item(currentRow, 0)->font().setBold(file->isLocked());
         }
     }
 }
@@ -86,6 +98,7 @@ void MainWindow::on_requestInitialize()
     {
         _fileManager.initialize(dlg.url(), dlg.user(), dlg.password());
     }
+    setWindowTitle("File Manager - " + dlg.url());
 }
 
 QString MainWindow::path(QTreeWidgetItem *item)
@@ -113,6 +126,7 @@ void MainWindow::on_actionTomar_Para_edicion_triggered()
     {
         QString folder = ui->treeWidget->currentItem()->text(0);
         QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
+        _lockAndOpenAfterDownloadFile = file;
         _fileManager.downloadFile(folder, file);
     }
 }

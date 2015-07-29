@@ -59,12 +59,16 @@ void FtpManager::downloadFile(const QString &remoteDir, const QString &filename,
         future.waitForFinished();
 }
 
-void FtpManager::uploadFile(const QString &remoteDir, const QString &filename)
+void FtpManager::uploadFile(const QString &remoteDir, const QString &filename, bool blockingCall)
 {
     if (!_initialized)
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
+
+    QFuture<void> future = QtConcurrent::run(internal_uploadFile, this, remoteDir, filename);
+    if (blockingCall)
+        future.waitForFinished();
 }
 
 void FtpManager::deleteFile(const QString &remoteDir, const QString &filename)
@@ -83,6 +87,17 @@ void FtpManager::getDirectoryContents(const QString &remoteDir, const QString &l
         throw FtpException();
 
     QFuture<void> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir, localFolder);
+}
+
+bool FtpManager::fileExists(const QString &remoteDir, const QString &filename)
+{
+    if (!_initialized)
+        emit requestInitialize();
+    if (!_initialized)
+        throw FtpException();
+
+    QFuture<void> future = QtConcurrent::run(internal_FileExists, this, remoteDir, filename);
+    future.waitForFinished();
 }
 
 QString FtpManager::getCurrentDirectory()
@@ -192,10 +207,10 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
     try
     {
         Poco::Timespan time(0, 0, 1, 0, 0);
-        std::string dir = remoteDir.toStdString();// "/home/diego/tmp/";
-        std::string host = ftpManager->_url.toStdString(); // "127.0.0.1";
-        std::string uname = ftpManager->_user.toStdString(); // "diego";
-        std::string password = ftpManager->_password.toStdString(); // "mic1492";
+        std::string dir = remoteDir.toStdString();
+        std::string host = ftpManager->_url.toStdString();
+        std::string uname = ftpManager->_user.toStdString();
+        std::string password = ftpManager->_password.toStdString();
 
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
@@ -213,6 +228,36 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
     {
         std::cerr << ex.what();
     }
+}
+
+bool FtpManager::internal_FileExists(FtpManager *ftpManager, const QString &remoteDir, const QString &filename)
+{
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string dir = (remoteDir + filename).toStdString();
+        std::string host = ftpManager->_url.toStdString();
+        std::string uname = ftpManager->_user.toStdString();
+        std::string password = ftpManager->_password.toStdString();
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        std::istream &is = session.beginList(remoteDir.toStdString(), true);
+        std::ostringstream os;
+        stream_copy_n(is, 0, os);
+        session.endList();
+        session.close();
+        std::cerr << os.str();
+        FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
+        return dirContents->count() > 0;
+        chequear esta funcion
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << ex.what();
+    }
+    return false;
 }
 
 FileList FtpManager::parseDirectoryContents(std::ostringstream &content, bool isWindows)
@@ -357,3 +402,5 @@ void FtpManager::gatherServerType()
         std::cerr << ex.what();
     }
 }
+
+//                    QUrl("file:///home/fstigre/fileName.pdf"));

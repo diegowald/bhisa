@@ -24,6 +24,16 @@ File::File(const QString &permissions, const QString &numberOfLinks,
     _underEditionAuthor = "";
 }
 
+File::File(const QString &filename,
+           const QString &underEditionAuthor,
+           qint64 underEditionDate,
+           QObject *parent) : QObject(parent)
+{
+    _underEdition = true;
+    _underEditionAuthor = underEditionAuthor;
+    _underEditionDate = QDateTime::fromMSecsSinceEpoch(underEditionDate);
+}
+
 File::~File()
 {
 }
@@ -71,4 +81,12 @@ QString File::underEdition() const
 unsigned int File::size() const
 {
     return _size;
+}
+
+void File::setUnderEdition(const QString &underEditionAuthor,
+                           qint64 underEditionDate)
+{
+    _underEditionAuthor = underEditionAuthor;
+    _underEditionDate = QDateTime::fromMSecsSinceEpoch(underEditionDate);
+    _underEdition = true;
 }

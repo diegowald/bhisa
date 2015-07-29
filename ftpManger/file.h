@@ -14,7 +14,16 @@ public:
          const QString &user, const QString &group,
          const QString &size, const QString &date, const QString &time,
          const QString &filename, QObject *parent = 0);
+
+    File(const QString &filename,
+         const QString &underEditionAuthor,
+         qint64 underEditionDate,
+         QObject *parent = 0);
+
+
+
     virtual ~File();
+
 
     bool isLocked() const;
     bool isFolder() const;
@@ -25,7 +34,8 @@ public:
     QString owner() const;
     QString underEdition() const;
     unsigned int size() const;
-
+    void setUnderEdition(const QString &underEditionAuthor,
+                         qint64 underEditionDate);
 private:
     QString _filename;
 

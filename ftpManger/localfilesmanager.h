@@ -22,6 +22,11 @@ public:
     void deleteDirectory(const QString &remoteDir);
     void changeDirectory(const QString &remoteDir);
 
+    bool lockFile(const QString &remoteDir, const QString &filename);
+    QUrl getLocalURL(const QString &remoteDir, const QString &filename);
+
+
+
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
     void fileUploaded(const QString &remoteDir, const QString &filename);
@@ -47,12 +52,13 @@ public slots:
     void on_requestInitialize();
 
 private:
-    void processControlFile(const QString &dir, const QString &filename);
+    void processControlFile(const QString &dir, const QString &filename, QString &editor, qint64 &since);
 
     void checkAndCreateFolderIfNotExists(const QString &foldername);
 
     bool isControlFile(const QString &filename);
-
+    QString extractFileNameFromControlFile(const QString &controlFileName);
+    QString getControlFileName(const QString &filename);
 private:
     bool _initialized;
     QString _localRootFolder;
