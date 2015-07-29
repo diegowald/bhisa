@@ -57,8 +57,11 @@
        <property name="inputMask">
         <string/>
        </property>
+       <property name="acceptDrops">
+        <bool>false</bool>
+       </property>
        <property name="echoMode">
-        <enum>QLineEdit::PasswordEchoOnEdit</enum>
+        <enum>QLineEdit::Password</enum>
        </property>
       </widget>
      </item>

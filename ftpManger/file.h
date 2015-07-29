@@ -45,6 +45,6 @@ private:
 };
 
 typedef QSharedPointer<File> FilePtr;
-typedef QSharedPointer<QList<FilePtr>> FileList;
+typedef QSharedPointer<QMap<QString, FilePtr>> FileList;
 
 #endif // FILE_H

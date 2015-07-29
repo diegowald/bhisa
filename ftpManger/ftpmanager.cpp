@@ -208,7 +208,6 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
         std::cerr << os.str();
         FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
         emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
-        ftpManager->processControlFile(remoteDir, localFolder);
     }
     catch (std::exception &ex)
     {
@@ -270,11 +269,10 @@ FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
 
-
-            res->append(FilePtr::create(permissions, numberOfLinks,
-                                        user, group, size,
-                                        month + "-" + day, time,
-                                        filename));
+            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
+                                            user, group, size,
+                                            month + "-" + day, time,
+                                            filename);
         }
     }
 
@@ -324,10 +322,10 @@ FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
                         ", " <<  time << ", " <<  filename;
 
 
-            res->append(FilePtr::create(permissions, numberOfLinks,
-                                        user, group, size,
-                                        date, time,
-                                        filename));
+            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
+                                               user, group, size,
+                                               date, time,
+                                               filename);
         }
     }
 
@@ -358,9 +356,4 @@ void FtpManager::gatherServerType()
     {
         std::cerr << ex.what();
     }
-}
-
-void FtpManager::processControlFile(const QString &dir, const QString &localFolder)
-{
-    downloadFile(dir, ".control.db", localFolder,  true);
 }

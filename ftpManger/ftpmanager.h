@@ -48,7 +48,6 @@ private:
     static FileList parseDirectoryContentsWindows(std::ostringstream &content);
 
     void gatherServerType();
-    void processControlFile(const QString &dir, const QString &localFolder);
 
 private:
     bool _initialized;
