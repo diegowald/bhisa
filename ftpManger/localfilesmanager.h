@@ -11,6 +11,8 @@ public:
     explicit LocalFilesManager(QObject *parent = 0);
     virtual ~LocalFilesManager();
 
+    QString loggedUser() const;
+
     void initialize(const QString &url, const QString &user, const QString &password);
     void downloadFile(const QString &remoteDir, const QString &filename);
     void uploadFile(const QString &remoteDir, const QString &filename);
@@ -24,8 +26,6 @@ public:
 
     bool lockFile(const QString &remoteDir, const QString &filename);
     QUrl getLocalURL(const QString &remoteDir, const QString &filename);
-
-
 
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
@@ -59,6 +59,7 @@ private:
     bool isControlFile(const QString &filename);
     QString extractFileNameFromControlFile(const QString &controlFileName);
     QString getControlFileName(const QString &filename);
+    QString localPath(const QString &remotePath, const QString filename);
 private:
     bool _initialized;
     QString _localRootFolder;

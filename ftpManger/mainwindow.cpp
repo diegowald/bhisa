@@ -37,6 +37,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_fileDownloaded(const QString &remoteDir, const QString &filename)
 {
+    statusBar()->showMessage(tr("File %1 downloaded.").arg(filename), 3000);
     if (_lockAndOpenAfterDownloadFile == filename)
     {
         if (_fileManager.lockFile(remoteDir, filename))
@@ -48,14 +49,17 @@ void MainWindow::on_fileDownloaded(const QString &remoteDir, const QString &file
 
 void MainWindow::on_fileUploaded(const QString &remoteDir, const QString &filename)
 {
+    statusBar()->showMessage(tr("File %1 uploaded.").arg(filename), 3000);
 }
 
 void MainWindow::on_fileDeleted(const QString &remoteDir, const QString &filename)
 {
+    statusBar()->showMessage(tr("File %1 deleted.").arg(filename), 3000);
 }
 
 void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents)
 {
+    statusBar()->showMessage(tr("Folder %1 retrieved.").arg(remoteDir), 3000);
     ui->tableWidget->setRowCount(0);
     QTreeWidgetItem *item = ui->treeWidget->currentItem();
     qDeleteAll(item->takeChildren());
@@ -74,25 +78,41 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
             ui->tableWidget->setItem(currentRow, 2, new QTableWidgetItem(file->owner()));
             ui->tableWidget->setItem(currentRow, 3, new QTableWidgetItem(file->underEdition()));
             //ui->tableWidget->item(currentRow, 0)->setBackgroundColor(file->isLocked() ? Qt::red : Qt::white);
-            ui->tableWidget->item(currentRow, 0)->font().setBold(file->isLocked());
+            if (file->isLocked())
+            {
+                if (file->underEditionAuthor() == _fileManager.loggedUser())
+                {
+                    QFont font = ui->tableWidget->item(currentRow, 0)->font();
+                    font.setBold(true);
+                    ui->tableWidget->item(currentRow, 0)->setFont(font);
+                }
+                else
+                {
+                    ui->tableWidget->item(currentRow, 0)->setForeground(Qt::darkGray);
+                }
+            }
         }
     }
 }
 
 void MainWindow::on_directoryCreated(const QString &remoteDir, const QString &directoryName)
 {
+    statusBar()->showMessage(tr("Folder %1 created.").arg(remoteDir), 3000);
 }
 
 void MainWindow::on_directoryDeleted(const QString &remoteDir)
 {
+    statusBar()->showMessage(tr("Folder %1 deleted.").arg(remoteDir), 3000);
 }
 
 void MainWindow::on_directoryChanged(const QString &remoteDir)
 {
+    statusBar()->showMessage(tr("Folder %1 changed.").arg(remoteDir), 3000);
 }
 
 void MainWindow::on_requestInitialize()
 {
+    statusBar()->showMessage(tr("Request initialization."), 3000);
     DlgLogin dlg(this);
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -112,11 +132,12 @@ void MainWindow::on_treeWidget_itemSelectionChanged()
 {
     QTreeWidgetItem * item = ui->treeWidget->selectedItems().at(0);
     _fileManager.getDirectoryContents(path(item));
+   statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
 }
 
 void MainWindow::on_actionActualizar_triggered()
 {
-
+    statusBar()->showMessage(tr("Refreshing"), 3000);
 }
 
 void MainWindow::on_actionTomar_Para_edicion_triggered()
@@ -128,5 +149,6 @@ void MainWindow::on_actionTomar_Para_edicion_triggered()
         QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
         _lockAndOpenAfterDownloadFile = file;
         _fileManager.downloadFile(folder, file);
+        statusBar()->showMessage(tr("Downloading and locking %1.").arg(file), 3000);
     }
 }

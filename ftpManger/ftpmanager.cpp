@@ -1,5 +1,6 @@
 #include "ftpmanager.h"
 #include <Poco/Net/FTPClientSession.h>
+#include <Poco/Net/NetException.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -59,14 +60,14 @@ void FtpManager::downloadFile(const QString &remoteDir, const QString &filename,
         future.waitForFinished();
 }
 
-void FtpManager::uploadFile(const QString &remoteDir, const QString &filename, bool blockingCall)
+void FtpManager::uploadFile(const QString &remoteDir, const QString &filename, const QString &localFilename, bool blockingCall)
 {
     if (!_initialized)
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
 
-    QFuture<void> future = QtConcurrent::run(internal_uploadFile, this, remoteDir, filename);
+    QFuture<void> future = QtConcurrent::run(internal_uploadFile, this, remoteDir, filename, localFilename);
     if (blockingCall)
         future.waitForFinished();
 }
@@ -96,8 +97,9 @@ bool FtpManager::fileExists(const QString &remoteDir, const QString &filename)
     if (!_initialized)
         throw FtpException();
 
-    QFuture<void> future = QtConcurrent::run(internal_FileExists, this, remoteDir, filename);
+    QFuture<bool> future = QtConcurrent::run(internal_FileExists, this, remoteDir, filename);
     future.waitForFinished();
+    return future.result();
 }
 
 QString FtpManager::getCurrentDirectory()
@@ -123,9 +125,9 @@ QString FtpManager::getCurrentDirectory()
         workDir = QString::fromStdString(currDir);
 //        emit ftpManager->fileDownloaded(remoteDir, filename);
     }
-    catch (std::exception &ex)
+    catch (Poco::Net::FTPException &ex)
     {
-        std::cerr << ex.what();
+        std::cerr << ex.displayText();
     }
     return workDir;
 }
@@ -192,14 +194,43 @@ void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &re
                          | QFileDevice::Permission::ReadUser);
         emit ftpManager->fileDownloaded(remoteDir, filename);
     }
-    catch (std::exception &ex)
+    catch (Poco::Net::FTPException &ex)
     {
-        std::cerr << ex.what();
+        std::cerr << ex.displayText();
     }
 }
 
-void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename)
+void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename, const QString &localFilename)
 {
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string dir = remoteDir.toStdString();// "/home/diego/tmp/";
+        std::string file = filename.toStdString(); //"test.txt";
+        std::string host = ftpManager->_url.toStdString(); // "127.0.0.1";
+        std::string uname = ftpManager->_user.toStdString(); // "diego";
+        std::string password = ftpManager->_password.toStdString(); // "mic1492";
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        session.setWorkingDirectory(dir);
+        session.setFileType(Poco::Net::FTPClientSession::TYPE_BINARY);
+        std::ostream& os = session.beginUpload(file);
+        std::ifstream ifs;
+
+        ifs.open(localFilename.toStdString(), std::ifstream::in | std::ifstream::app | std::ifstream::binary);
+
+        stream_copy_n(ifs, ifs.gcount(), os);
+        ifs.close();
+        session.endDownload();
+        session.close();
+        emit ftpManager->fileUploaded(remoteDir, filename);
+    }
+    catch (Poco::Net::FTPException &ex)
+    {
+        std::cerr << ex.displayText();
+    }
 }
 
 void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder)
@@ -224,9 +255,9 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
         FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
         emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
     }
-    catch (std::exception &ex)
+    catch (Poco::Net::FTPException &ex)
     {
-        std::cerr << ex.what();
+        std::cerr << ex.displayText();
     }
 }
 
@@ -243,7 +274,7 @@ bool FtpManager::internal_FileExists(FtpManager *ftpManager, const QString &remo
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
         session.login(uname, password);
-        std::istream &is = session.beginList(remoteDir.toStdString(), true);
+        std::istream &is = session.beginList(dir, true);
         std::ostringstream os;
         stream_copy_n(is, 0, os);
         session.endList();
@@ -251,11 +282,16 @@ bool FtpManager::internal_FileExists(FtpManager *ftpManager, const QString &remo
         std::cerr << os.str();
         FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
         return dirContents->count() > 0;
-        chequear esta funcion
     }
-    catch (std::exception &ex)
+    catch (Poco::Net::FTPException &ex)
     {
-        std::cerr << ex.what();
+        std::cerr << ex.displayText();
+        std::cerr << ex.message();
+        if (ex.code() == 550)
+        {
+            return false;
+        }
+        throw ex;
     }
     return false;
 }
@@ -314,10 +350,9 @@ FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
 
-            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
-                                            user, group, size,
-                                            month + "-" + day, time,
-                                            filename);
+            (*res)[filename] = FilePtr::create(filename);
+            (*res)[filename]->setFileData(permissions, user, size.toUInt(),
+                                            month + "-" + day, time);
         }
     }
 
@@ -366,11 +401,9 @@ FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         ", " <<  time << ", " <<  filename;
 
-
-            (*res)[filename] = FilePtr::create(permissions, numberOfLinks,
-                                               user, group, size,
-                                               date, time,
-                                               filename);
+            (*res)[filename] = FilePtr::create(filename);
+            (*res)[filename]->setFileData(permissions, user, size.toUInt(),
+                                          date, time);
         }
     }
 
@@ -397,9 +430,9 @@ void FtpManager::gatherServerType()
         _isWindows = QString::fromStdString(result).contains("Win");
         session.close();
     }
-    catch (std::exception &ex)
+    catch (Poco::Net::FTPException &ex)
     {
-        std::cerr << ex.what();
+        std::cerr << ex.displayText();
     }
 }
 

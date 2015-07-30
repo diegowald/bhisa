@@ -5,33 +5,13 @@ File::File(QObject *parent):QObject(parent)
 
 }
 
-File::File(const QString &permissions, const QString &numberOfLinks,
-           const QString &user, const QString &group,
-           const QString &size, const QString &date, const QString &time,
-           const QString &filename, QObject *parent) : QObject(parent)
+File::File(const QString &filename, QObject *parent) : QObject(parent)
 {
-    _permissions = permissions;
-    _numberOfLinks = numberOfLinks.toInt();
-    _user = user;
-    _group = group;
-    _size = size.toUInt();
-    _date = date;
-    _time = time;
     _filename = filename;
 
     _isFolder = _permissions.length() > 0 ? _permissions.at(0) == 'd' : false;
     _underEdition = false;
     _underEditionAuthor = "";
-}
-
-File::File(const QString &filename,
-           const QString &underEditionAuthor,
-           qint64 underEditionDate,
-           QObject *parent) : QObject(parent)
-{
-    _underEdition = true;
-    _underEditionAuthor = underEditionAuthor;
-    _underEditionDate = QDateTime::fromMSecsSinceEpoch(underEditionDate);
 }
 
 File::~File()
@@ -89,4 +69,28 @@ void File::setUnderEdition(const QString &underEditionAuthor,
     _underEditionAuthor = underEditionAuthor;
     _underEditionDate = QDateTime::fromMSecsSinceEpoch(underEditionDate);
     _underEdition = true;
+}
+
+void File::setFileData(const QString &permissions,
+                       const QString &user,
+                       unsigned int size,
+                       const QString &date,
+                       const QString &time)
+{
+    _permissions = permissions;
+    _user = user;
+    _size = size;
+    _date = date;
+    _time = time;
+    _isFolder = permissions.startsWith("d");
+}
+
+QString File::date() const
+{
+    return _date;
+}
+
+QString File::time() const
+{
+    return _time;
 }

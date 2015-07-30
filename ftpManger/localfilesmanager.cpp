@@ -50,7 +50,7 @@ void LocalFilesManager::downloadFile(const QString &remoteDir, const QString &fi
 
 void LocalFilesManager::uploadFile(const QString &remoteDir, const QString &filename)
 {
-    _ftpManager.uploadFile(remoteDir, filename, false);
+    _ftpManager.uploadFile(remoteDir, filename, localPath(remoteDir, filename), false);
 }
 
 void LocalFilesManager::deleteFile(const QString &remoteDir, const QString &filename)
@@ -100,6 +100,7 @@ void LocalFilesManager::on_fileDeleted(const QString &remoteDir, const QString &
 
 void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents)
 {
+    FileList contentsProcessed = FileList::create();
     foreach (FilePtr file, *dirContents)
     {
         QString folder = (remoteDir == "/") ?
@@ -112,6 +113,15 @@ void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteD
         if (file->isFolder())
         {
             checkAndCreateFolderIfNotExists(folder);
+            if (!contentsProcessed->contains(file->filename()))
+            {
+                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
+            }
+            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
+                                                                file->owner(),
+                                                                file->size(),
+                                                                file->date(),
+                                                                file->time());
         }
         else if (isControlFile(file->filename()))
         {
@@ -121,17 +131,26 @@ void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteD
             QString editor;
             qint64 since;
             processControlFile(remoteDir, file->filename(), editor, since);
-            if (dirContents->contains(filename))
+            if (!contentsProcessed->contains(filename))
             {
-                (*dirContents)[filename]->setUnderEdition(editor, since);
+                (*contentsProcessed)[filename] = FilePtr::create(filename);
             }
-            else
+            (*contentsProcessed)[filename]->setUnderEdition(editor, since);
+        }
+        else
+        {
+            if (!contentsProcessed->contains(file->filename()))
             {
-                (*dirContents)[filename] = FilePtr::create(filename, editor, since);
+                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
             }
+            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
+                                                                file->owner(),
+                                                                file->size(),
+                                                                file->date(),
+                                                                file->time());
         }
     }
-    emit getDirectoryContentsDownloaded(remoteDir, dirContents);
+    emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
 }
 
 void LocalFilesManager::on_directoryCreated(const QString &remoteDir, const QString &directoryName)
@@ -181,7 +200,6 @@ QString LocalFilesManager::getControlFileName(const QString &filename)
 
 void LocalFilesManager::processControlFile(const QString &dir, const QString &filename, QString &editor, qint64 &since)
 {
-    chequear esto
     QString filePath = dir.endsWith("/") ? dir + filename : dir + "/" + filename;
     QFile file(filePath);
     file.open(QIODevice::ReadOnly);
@@ -194,30 +212,43 @@ void LocalFilesManager::processControlFile(const QString &dir, const QString &fi
 
 bool LocalFilesManager::lockFile(const QString &remoteDir, const QString &filename)
 {
-    chequear esto
     // check if file is remotely locked
-    if (_ftpManager.fileExists(remoteDir, getControlFileName(filename)))
+    QString controlFileName = getControlFileName(filename);
+    if (_ftpManager.fileExists(remoteDir, controlFileName))
     {
         return false;
     }
 
-    QString filePath = _ftpSessionFolder + remoteDir + getControlFileName(filename);
+    QString filePath = localPath(remoteDir, controlFileName);
     QFile file(filePath);
     file.open(QIODevice::WriteOnly);
     QTextStream stream(&file);
-    stream << _user;
-    stream << QDateTime::currentDateTime().toMSecsSinceEpoch();
+    stream << _user << "\n" << QDateTime::currentDateTime().toMSecsSinceEpoch();
     file.close();
 
-    _ftpManager.uploadFile(remoteDir, filePath, true);
+    _ftpManager.uploadFile(remoteDir, controlFileName, filePath, true);
     return true;
+}
+
+QString LocalFilesManager::localPath(const QString &remotePath, const QString filename)
+{
+    QString dir = remotePath;
+    dir = dir.remove(0, 1);
+    QString s = "%1%2%3";
+    qDebug() << s.arg(_ftpSessionFolder).arg(dir).arg(filename);
+    return s.arg(_ftpSessionFolder).arg(dir).arg(filename);
 }
 
 QUrl LocalFilesManager::getLocalURL(const QString &remoteDir, const QString &filename)
 {
     QString dir = remoteDir;
     dir = dir.remove(0, 1);
-    QString sUrl = "file://%1%2%3";
-    qDebug() <<sUrl.arg(_ftpSessionFolder).arg(dir).arg(filename);
-    return QUrl(sUrl.arg(_ftpSessionFolder).arg(dir).arg(filename));
+    QString sUrl = "file://%1";
+    qDebug() <<sUrl.arg(localPath(remoteDir, filename));
+    return QUrl(sUrl.arg(localPath(remoteDir, filename)));
+}
+
+QString LocalFilesManager::loggedUser() const
+{
+    return _user;
 }

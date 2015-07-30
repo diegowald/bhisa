@@ -14,7 +14,7 @@ public:
 
     void initialize(const QString &url, const QString &user, const QString &password);
     void downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder, bool blockingCall);
-    void uploadFile(const QString &remoteDir, const QString &filename, bool blockingCall);
+    void uploadFile(const QString &remoteDir, const QString &filename, const QString &localFilename, bool blockingCall);
     void deleteFile(const QString &remoteDir, const QString &filename);
 
     QString getCurrentDirectory();
@@ -40,7 +40,7 @@ signals:
 public slots:
 private:
     static void internal_downloadFile(FtpManager *ftpManager, const QString &remtoeDir, const QString &filename, const QString &localFolder);
-    static void internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
+    static void internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename, const QString &localFilename);
     static void internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder);
     static bool internal_FileExists(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
 
