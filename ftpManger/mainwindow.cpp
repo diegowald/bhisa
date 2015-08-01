@@ -132,7 +132,7 @@ void MainWindow::on_treeWidget_itemSelectionChanged()
 {
     QTreeWidgetItem * item = ui->treeWidget->selectedItems().at(0);
     _fileManager.getDirectoryContents(path(item));
-   statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
+    statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
 }
 
 void MainWindow::on_actionActualizar_triggered()
@@ -144,10 +144,21 @@ void MainWindow::on_actionTomar_Para_edicion_triggered()
 {
     if ((ui->treeWidget->currentItem() != NULL) && (ui->tableWidget->currentRow() >= 0))
     {
-        QString folder = ui->treeWidget->currentItem()->text(0);
+        QString folder = path(ui->treeWidget->currentItem());
         QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
         _lockAndOpenAfterDownloadFile = file;
         _fileManager.downloadFile(folder, file);
         statusBar()->showMessage(tr("Downloading and locking %1.").arg(file), 3000);
+    }
+}
+
+void MainWindow::on_actionFin_Edicion_triggered()
+{
+    qDebug() << ui->tableWidget->currentRow();
+    if ((ui->treeWidget->currentItem() != NULL) && (ui->tableWidget->currentRow() >= 0))
+    {
+        QString folder = path(ui->treeWidget->currentItem());
+        QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
+        //if (file.isLocked()
     }
 }

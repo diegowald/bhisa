@@ -36,6 +36,8 @@ private slots:
 
     void on_actionTomar_Para_edicion_triggered();
 
+    void on_actionFin_Edicion_triggered();
+
 private:
     QString path(QTreeWidgetItem *item);
 
