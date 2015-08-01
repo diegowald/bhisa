@@ -142,7 +142,6 @@ void MainWindow::on_actionActualizar_triggered()
 
 void MainWindow::on_actionTomar_Para_edicion_triggered()
 {
-    qDebug() << ui->tableWidget->currentRow();
     if ((ui->treeWidget->currentItem() != NULL) && (ui->tableWidget->currentRow() >= 0))
     {
         QString folder = ui->treeWidget->currentItem()->text(0);
