@@ -4,6 +4,9 @@
 #include <QTextStream>
 #include <QUrl>
 #include "file.h"
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
+
 
 #include <QDebug>
 
@@ -65,7 +68,7 @@ QString LocalFilesManager::getCurrentDirectory()
 
 void LocalFilesManager::getDirectoryContents(const QString &remoteDir)
 {
-    _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder);
+    _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder, false);
 }
 
 void LocalFilesManager::createDirectory(const QString &remoteDir, const QString &directoryName)
@@ -90,12 +93,20 @@ void LocalFilesManager::on_fileDownloaded(const QString &remoteDir, const QStrin
 
 void LocalFilesManager::on_fileUploaded(const QString &remoteDir, const QString &filename)
 {
+    QString controlFile = getControlFileName(filename);
+    if (filename != controlFile)
+    {
+        deleteFile(remoteDir, controlFile);
+    }
     emit fileUploaded(remoteDir, filename);
 }
 
 void LocalFilesManager::on_fileDeleted(const QString &remoteDir, const QString &filename)
 {
-    emit fileDeleted(remoteDir, filename);
+    if (!filename.startsWith(".ctl."))
+    {
+        emit fileDeleted(remoteDir, filename);
+    }
 }
 
 void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents)
@@ -150,6 +161,7 @@ void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteD
                                                                 file->time());
         }
     }
+    if (_exportFolder == loca)
     emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
 }
 
@@ -251,4 +263,15 @@ QUrl LocalFilesManager::getLocalURL(const QString &remoteDir, const QString &fil
 QString LocalFilesManager::loggedUser() const
 {
     return _user;
+}
+
+
+void LocalFilesManager::exportFolder(const QString &remoteFolder, const QString &localFolder)
+{
+    QFuture<void> future = QtConcurrent::run(internal_exportFolder, this, remoteFolder, localFolder);
+}
+
+void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManager, const QString &remoteFolder, const QString &localFolder)
+{
+    localFileManager->_ftpManager.getDirectoryContents(remoteFolder, localFolder, true);
 }

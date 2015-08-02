@@ -5,6 +5,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QDebug>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -75,7 +76,7 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
             ui->tableWidget->insertRow(currentRow);
             ui->tableWidget->setItem(currentRow, 0, new QTableWidgetItem(file->filename()));
             ui->tableWidget->setItem(currentRow, 1, new QTableWidgetItem(QString::number(file->size())));
-            ui->tableWidget->setItem(currentRow, 2, new QTableWidgetItem(file->owner()));
+            ui->tableWidget->setItem(currentRow, 2, new QTableWidgetItem(file->underEditionAuthor()));
             ui->tableWidget->setItem(currentRow, 3, new QTableWidgetItem(file->underEdition()));
             //ui->tableWidget->item(currentRow, 0)->setBackgroundColor(file->isLocked() ? Qt::red : Qt::white);
             if (file->isLocked())
@@ -159,6 +160,27 @@ void MainWindow::on_actionFin_Edicion_triggered()
     {
         QString folder = path(ui->treeWidget->currentItem());
         QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
-        //if (file.isLocked()
+        if (fileLockedByMe())
+        {
+            _fileManager.uploadFile(folder, file);
+        }
     }
+}
+
+bool MainWindow::fileLockedByMe() const
+{
+    qDebug() << ui->tableWidget->currentRow();
+    int row = ui->tableWidget->currentRow();
+    bool isLocked =  ui->tableWidget->item(row, 3)->text() == tr("Yes");
+    bool author = ui->tableWidget->item(row, 2)->text() == _fileManager.loggedUser();
+    return isLocked && author;
+}
+
+void MainWindow::on_actionExportar_triggered()
+{
+    qDebug() << ui->treeWidget->currentItem()->text(0);
+    QString remoteFolder = path(ui->treeWidget->currentItem());
+    QString localFolder = QFileDialog::getExistingDirectory(this, tr("Select folder"));
+    qDebug() << localFolder;
+    _fileManager.exportFolder(remoteFolder, localFolder);
 }

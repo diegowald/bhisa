@@ -27,6 +27,8 @@ public:
     bool lockFile(const QString &remoteDir, const QString &filename);
     QUrl getLocalURL(const QString &remoteDir, const QString &filename);
 
+    void exportFolder(const QString &remoteFolder, const QString &localFolder);
+
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
     void fileUploaded(const QString &remoteDir, const QString &filename);
@@ -60,6 +62,8 @@ private:
     QString extractFileNameFromControlFile(const QString &controlFileName);
     QString getControlFileName(const QString &filename);
     QString localPath(const QString &remotePath, const QString filename);
+
+    static void internal_exportFolder(LocalFilesManager* localFileManager, const QString &remoteFolder, const QString &localFolder);
 private:
     bool _initialized;
     QString _localRootFolder;
@@ -69,6 +73,7 @@ private:
     QString _password;
     bool _isWindows;
     FtpManager _ftpManager;
+    QString _exportFolder;
 
 };
 

@@ -80,7 +80,7 @@ void FtpManager::deleteFile(const QString &remoteDir, const QString &filename)
         throw FtpException();
 }
 
-void FtpManager::getDirectoryContents(const QString &remoteDir, const QString &localFolder)
+void FtpManager::getDirectoryContents(const QString &remoteDir, const QString &localFolder, bool blockingCall)
 {
     if (!_initialized)
         emit requestInitialize();
@@ -88,6 +88,10 @@ void FtpManager::getDirectoryContents(const QString &remoteDir, const QString &l
         throw FtpException();
 
     QFuture<void> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir, localFolder);
+    if (blockingCall)
+    {
+        future.waitForFinished();
+    }
 }
 
 bool FtpManager::fileExists(const QString &remoteDir, const QString &filename)
@@ -113,9 +117,9 @@ QString FtpManager::getCurrentDirectory()
     try
     {
         Poco::Timespan time(0, 0, 1, 0, 0);
-        std::string host = _url.toStdString(); // "127.0.0.1";
-        std::string uname = _user.toStdString(); // "diego";
-        std::string password = _password.toStdString(); // "mic1492";
+        std::string host = _url.toStdString();
+        std::string uname = _user.toStdString();
+        std::string password = _password.toStdString();
 
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
@@ -123,7 +127,6 @@ QString FtpManager::getCurrentDirectory()
         std::string currDir = session.getWorkingDirectory();
         session.close();
         workDir = QString::fromStdString(currDir);
-//        emit ftpManager->fileDownloaded(remoteDir, filename);
     }
     catch (Poco::Net::FTPException &ex)
     {
@@ -163,11 +166,11 @@ void FtpManager::internal_downloadFile(FtpManager *ftpManager, const QString &re
     try
     {
         Poco::Timespan time(0, 0, 1, 0, 0);
-        std::string dir = remoteDir.toStdString();// "/home/diego/tmp/";
-        std::string file = filename.toStdString(); //"test.txt";
-        std::string host = ftpManager->_url.toStdString(); // "127.0.0.1";
-        std::string uname = ftpManager->_user.toStdString(); // "diego";
-        std::string password = ftpManager->_password.toStdString(); // "mic1492";
+        std::string dir = remoteDir.toStdString();
+        std::string file = filename.toStdString();
+        std::string host = ftpManager->_url.toStdString();
+        std::string uname = ftpManager->_user.toStdString();
+        std::string password = ftpManager->_password.toStdString();
 
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
@@ -205,11 +208,11 @@ void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remo
     try
     {
         Poco::Timespan time(0, 0, 1, 0, 0);
-        std::string dir = remoteDir.toStdString();// "/home/diego/tmp/";
-        std::string file = filename.toStdString(); //"test.txt";
-        std::string host = ftpManager->_url.toStdString(); // "127.0.0.1";
-        std::string uname = ftpManager->_user.toStdString(); // "diego";
-        std::string password = ftpManager->_password.toStdString(); // "mic1492";
+        std::string dir = remoteDir.toStdString();
+        std::string file = filename.toStdString();
+        std::string host = ftpManager->_url.toStdString();
+        std::string uname = ftpManager->_user.toStdString();
+        std::string password = ftpManager->_password.toStdString();
 
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
@@ -226,6 +229,32 @@ void FtpManager::internal_uploadFile(FtpManager *ftpManager, const QString &remo
         session.endDownload();
         session.close();
         emit ftpManager->fileUploaded(remoteDir, filename);
+    }
+    catch (Poco::Net::FTPException &ex)
+    {
+        std::cerr << ex.displayText();
+    }
+}
+
+void FtpManager::internal_deleteFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename)
+{
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string host = ftpManager->_url.toStdString();
+        std::string uname = ftpManager->_user.toStdString();
+        std::string password = ftpManager->_password.toStdString();
+
+        std::string dir = remoteDir.toStdString();
+        std::string file = filename.toStdString();
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+
+        session.setWorkingDirectory(dir);
+        session.remove(file);
+        emit ftpManager->fileDeleted(remoteDir, filename);
     }
     catch (Poco::Net::FTPException &ex)
     {
@@ -253,7 +282,7 @@ void FtpManager::internal_getDirectoryContents(FtpManager *ftpManager, const QSt
         session.close();
         std::cerr << os.str();
         FileList dirContents = parseDirectoryContents(os, ftpManager->_isWindows);
-        emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents);
+        emit ftpManager->getDirectoryContentsDownloaded(remoteDir, dirContents, localFolder);
     }
     catch (Poco::Net::FTPException &ex)
     {
@@ -416,9 +445,9 @@ void FtpManager::gatherServerType()
     try
     {
         Poco::Timespan time(0, 0, 1, 0, 0);
-        std::string host = _url.toStdString(); // "127.0.0.1";
-        std::string uname = _user.toStdString(); // "diego";
-        std::string password = _password.toStdString(); // "mic1492";
+        std::string host = _url.toStdString();
+        std::string uname = _user.toStdString();
+        std::string password = _password.toStdString();
 
         Poco::Net::FTPClientSession session(host);
         session.setTimeout(time);
@@ -435,5 +464,3 @@ void FtpManager::gatherServerType()
         std::cerr << ex.displayText();
     }
 }
-
-//                    QUrl("file:///home/fstigre/fileName.pdf"));

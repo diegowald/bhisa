@@ -31,15 +31,15 @@ public slots:
 
 private slots:
     void on_treeWidget_itemSelectionChanged();
-
     void on_actionActualizar_triggered();
-
     void on_actionTomar_Para_edicion_triggered();
-
     void on_actionFin_Edicion_triggered();
+
+    void on_actionExportar_triggered();
 
 private:
     QString path(QTreeWidgetItem *item);
+    bool fileLockedByMe() const;
 
 private:
     Ui::MainWindow *ui;
