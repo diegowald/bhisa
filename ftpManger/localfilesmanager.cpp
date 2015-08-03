@@ -109,16 +109,16 @@ void LocalFilesManager::on_fileDeleted(const QString &remoteDir, const QString &
     }
 }
 
-void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents)
+void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents, const QString &localFolder)
 {
     FileList contentsProcessed = FileList::create();
     foreach (FilePtr file, *dirContents)
     {
         QString folder = (remoteDir == "/") ?
-                    QString("%1%2").arg(_ftpSessionFolder).arg(file->filename())
+                    QString("%1%2").arg(localFolder).arg(file->filename())
                   :
                     QString("%1/%2/%3")
-                    .arg(_ftpSessionFolder).arg(remoteDir).arg(file->filename());
+                    .arg(localFolder).arg(remoteDir).arg(file->filename());
         qDebug() << folder;
 
         if (file->isFolder())
@@ -161,8 +161,10 @@ void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteD
                                                                 file->time());
         }
     }
-    if (_exportFolder == loca)
-    emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
+    if (_exportFolder != localFolder)
+    {
+        emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
+    }aca deberia estar el future y demas
 }
 
 void LocalFilesManager::on_directoryCreated(const QString &remoteDir, const QString &directoryName)

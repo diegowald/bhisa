@@ -29,8 +29,8 @@ signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
     void fileUploaded(const QString &remoteDir, const QString &filename);
     void fileDeleted(const QString &remoteDir, const QString &filename);
-
     void getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents, const QString &localFolder);
+
     void directoryCreated(const QString &remoteDir, const QString &directoryName);
     void directoryDeleted(const QString &remoteDir);
     void directoryChanged(const QString &remoteDir);
