@@ -13,37 +13,23 @@ public:
     virtual ~FtpManager();
 
     void initialize(const QString &url, const QString &user, const QString &password);
-    void downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder, bool blockingCall);
-    void uploadFile(const QString &remoteDir, const QString &filename, const QString &localFilename, bool blockingCall);
-    void deleteFile(const QString &remoteDir, const QString &filename);
+    bool downloadFile(const QString &remoteDir, const QString &filename, const QString &localFolder);
+    bool uploadFile(const QString &remoteDir, const QString &filename, const QString &localFilename);
+    bool deleteFile(const QString &remoteDir, const QString &filename);
 
     QString getCurrentDirectory();
-    void getDirectoryContents(const QString &remoteDir, const QString &localFolder, bool blockingCall);
-    void createDirectory(const QString &remoteDir, const QString &directoryName);
-    void deleteDirectory(const QString &remoteDir);
-    void changeDirectory(const QString &remoteDir);
+    FileList getDirectoryContents(const QString &remoteDir, const QString &localFolder);
+    bool createDirectory(const QString &remoteDir, const QString &directoryName);
+    bool deleteDirectory(const QString &remoteDir);
+    bool changeDirectory(const QString &remoteDir);
 
     bool fileExists(const QString &remoteDir, const QString &filename);
 
 signals:
-    void fileDownloaded(const QString &remtoeDir, const QString &filename);
-    void fileUploaded(const QString &remoteDir, const QString &filename);
-    void fileDeleted(const QString &remoteDir, const QString &filename);
-    void getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents, const QString &localFolder);
-
-    void directoryCreated(const QString &remoteDir, const QString &directoryName);
-    void directoryDeleted(const QString &remoteDir);
-    void directoryChanged(const QString &remoteDir);
-
     void requestInitialize();
 
 public slots:
 private:
-    static void internal_downloadFile(FtpManager *ftpManager, const QString &remtoeDir, const QString &filename, const QString &localFolder);
-    static void internal_uploadFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename, const QString &localFilename);
-    static void internal_deleteFile(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
-    static void internal_getDirectoryContents(FtpManager *ftpManager, const QString &remoteDir, const QString &localFolder);
-    static bool internal_FileExists(FtpManager *ftpManager, const QString &remoteDir, const QString &filename);
 
     static void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 

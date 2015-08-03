@@ -14,15 +14,6 @@ LocalFilesManager::LocalFilesManager(QObject *parent) : QObject(parent)
 {
     _initialized = false;
 
-    connect(&_ftpManager, &FtpManager::fileDownloaded, this, &LocalFilesManager::on_fileDownloaded);
-    connect(&_ftpManager, &FtpManager::fileUploaded, this, &LocalFilesManager::on_fileUploaded);
-    connect(&_ftpManager, &FtpManager::fileDeleted, this, &LocalFilesManager::on_fileDeleted);
-
-    connect(&_ftpManager, &FtpManager::getDirectoryContentsDownloaded, this, &LocalFilesManager::on_getDirectoryContentsDownloaded);
-    connect(&_ftpManager, &FtpManager::directoryCreated, this, &LocalFilesManager::on_directoryCreated);
-    connect(&_ftpManager, &FtpManager::directoryDeleted, this, &LocalFilesManager::on_directoryDeleted);
-    connect(&_ftpManager, &FtpManager::directoryChanged, this, &LocalFilesManager::on_directoryChanged);
-
     connect(&_ftpManager, &FtpManager::requestInitialize, this, &LocalFilesManager::on_requestInitialize);
 
     _localRootFolder  = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
@@ -48,17 +39,17 @@ void LocalFilesManager::initialize(const QString &url, const QString &user, cons
 
 void LocalFilesManager::downloadFile(const QString &remoteDir, const QString &filename)
 {
-    _ftpManager.downloadFile(remoteDir, filename, _ftpSessionFolder, false);
+    QFuture<void> future = QtConcurrent::run(internal_downloadFile, this, remoteDir, filename);
 }
 
 void LocalFilesManager::uploadFile(const QString &remoteDir, const QString &filename)
 {
-    _ftpManager.uploadFile(remoteDir, filename, localPath(remoteDir, filename), false);
+    QFuture<void> future = QtConcurrent::run(internal_uploadFile, this, remoteDir, filename);
 }
 
 void LocalFilesManager::deleteFile(const QString &remoteDir, const QString &filename)
 {
-    _ftpManager.deleteFile(remoteDir, filename);
+    QFuture<void> future = QtConcurrent::run(internal_deleteFile, this, remoteDir, filename);
 }
 
 QString LocalFilesManager::getCurrentDirectory()
@@ -68,7 +59,7 @@ QString LocalFilesManager::getCurrentDirectory()
 
 void LocalFilesManager::getDirectoryContents(const QString &remoteDir)
 {
-    _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder, false);
+    QFuture<FileList> future = QtConcurrent::run(internal_getDirectoryContents, this, remoteDir, _ftpSessionFolder);
 }
 
 void LocalFilesManager::createDirectory(const QString &remoteDir, const QString &directoryName)
@@ -84,102 +75,6 @@ void LocalFilesManager::deleteDirectory(const QString &remoteDir)
 void LocalFilesManager::changeDirectory(const QString &remoteDir)
 {
     _ftpManager.changeDirectory(remoteDir);
-}
-
-void LocalFilesManager::on_fileDownloaded(const QString &remoteDir, const QString &filename)
-{
-    emit fileDownloaded(remoteDir, filename);
-}
-
-void LocalFilesManager::on_fileUploaded(const QString &remoteDir, const QString &filename)
-{
-    QString controlFile = getControlFileName(filename);
-    if (filename != controlFile)
-    {
-        deleteFile(remoteDir, controlFile);
-    }
-    emit fileUploaded(remoteDir, filename);
-}
-
-void LocalFilesManager::on_fileDeleted(const QString &remoteDir, const QString &filename)
-{
-    if (!filename.startsWith(".ctl."))
-    {
-        emit fileDeleted(remoteDir, filename);
-    }
-}
-
-void LocalFilesManager::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents, const QString &localFolder)
-{
-    FileList contentsProcessed = FileList::create();
-    foreach (FilePtr file, *dirContents)
-    {
-        QString folder = (remoteDir == "/") ?
-                    QString("%1%2").arg(localFolder).arg(file->filename())
-                  :
-                    QString("%1/%2/%3")
-                    .arg(localFolder).arg(remoteDir).arg(file->filename());
-        qDebug() << folder;
-
-        if (file->isFolder())
-        {
-            checkAndCreateFolderIfNotExists(folder);
-            if (!contentsProcessed->contains(file->filename()))
-            {
-                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
-            }
-            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
-                                                                file->owner(),
-                                                                file->size(),
-                                                                file->date(),
-                                                                file->time());
-        }
-        else if (isControlFile(file->filename()))
-        {
-            _ftpManager.downloadFile(remoteDir, file->filename(), folder, true);
-            dirContents->remove(file->filename());
-            QString filename = extractFileNameFromControlFile(file->filename());
-            QString editor;
-            qint64 since;
-            processControlFile(remoteDir, file->filename(), editor, since);
-            if (!contentsProcessed->contains(filename))
-            {
-                (*contentsProcessed)[filename] = FilePtr::create(filename);
-            }
-            (*contentsProcessed)[filename]->setUnderEdition(editor, since);
-        }
-        else
-        {
-            if (!contentsProcessed->contains(file->filename()))
-            {
-                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
-            }
-            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
-                                                                file->owner(),
-                                                                file->size(),
-                                                                file->date(),
-                                                                file->time());
-        }
-    }
-    if (_exportFolder != localFolder)
-    {
-        emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
-    }aca deberia estar el future y demas
-}
-
-void LocalFilesManager::on_directoryCreated(const QString &remoteDir, const QString &directoryName)
-{
-    emit directoryCreated(remoteDir, directoryName);
-}
-
-void LocalFilesManager::on_directoryDeleted(const QString &remoteDir)
-{
-    emit directoryDeleted(remoteDir);
-}
-
-void LocalFilesManager::on_directoryChanged(const QString &remoteDir)
-{
-    emit directoryChanged(remoteDir);
 }
 
 void LocalFilesManager::on_requestInitialize()
@@ -240,7 +135,7 @@ bool LocalFilesManager::lockFile(const QString &remoteDir, const QString &filena
     stream << _user << "\n" << QDateTime::currentDateTime().toMSecsSinceEpoch();
     file.close();
 
-    _ftpManager.uploadFile(remoteDir, controlFileName, filePath, true);
+    _ftpManager.uploadFile(remoteDir, controlFileName, filePath);
     return true;
 }
 
@@ -270,10 +165,125 @@ QString LocalFilesManager::loggedUser() const
 
 void LocalFilesManager::exportFolder(const QString &remoteFolder, const QString &localFolder)
 {
+    _exportFolder = localFolder;
     QFuture<void> future = QtConcurrent::run(internal_exportFolder, this, remoteFolder, localFolder);
 }
 
 void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManager, const QString &remoteFolder, const QString &localFolder)
 {
-    localFileManager->_ftpManager.getDirectoryContents(remoteFolder, localFolder, true);
+    FileList list = internal_getDirectoryContents(localFileManager, remoteFolder, localFolder);
+    foreach (FilePtr file, *list)
+    {
+        if (file->isFolder())
+        {
+            QString rFolder = remoteFolder + "/" + file->filename();
+            internal_exportFolder(localFileManager, rFolder, localFolder);
+        }
+        else if (!localFileManager->isControlFile(file->filename()))
+        {
+            localFileManager->_ftpManager.downloadFile(remoteFolder, file->filename(), localFolder);
+        }
+    }
+    if (localFolder == localFileManager->_exportFolder)
+    {
+        // FIN DEL PROCESO
+        localFileManager->_exportFolder = "";
+    }
+}
+
+
+void LocalFilesManager::internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename)
+{
+    if (localFileManager->_ftpManager.downloadFile(remoteDir, filename, localFileManager->_ftpSessionFolder))
+    {
+    }
+    emit localFileManager->fileDownloaded(remoteDir, filename);
+}
+
+void LocalFilesManager::internal_uploadFile(LocalFilesManager *localFileManager, const QString &remoteDir, const QString &filename)
+{
+    if (localFileManager->_ftpManager.uploadFile(remoteDir, filename, localFileManager->localPath(remoteDir, filename)))
+    {
+        QString controlFile = localFileManager->getControlFileName(filename);
+        if (filename != controlFile)
+        {
+            localFileManager->deleteFile(remoteDir, controlFile);
+        }
+    }
+    emit localFileManager->fileUploaded(remoteDir, filename);
+}
+
+void LocalFilesManager::internal_deleteFile(LocalFilesManager *localFileManager, const QString &remoteDir, const QString &filename)
+{
+    localFileManager->_ftpManager.deleteFile(remoteDir, filename);
+    if (!filename.startsWith(".ctl."))
+    {
+        emit localFileManager->fileDeleted(remoteDir, filename);
+    }
+}
+
+
+FileList LocalFilesManager::internal_getDirectoryContents(LocalFilesManager *localFileManager, const QString &remoteDir, const QString &localFolder)
+{
+    FileList dirContents = localFileManager->_ftpManager.getDirectoryContents(remoteDir, localFileManager->_ftpSessionFolder);
+    FileList contentsProcessed = FileList::create();
+    foreach (FilePtr file, *dirContents)
+    {
+        QString folder = (remoteDir == "/") ?
+                    QString("%1%2").arg(localFolder).arg(file->filename())
+                  :
+                    QString("%1/%2/%3")
+                    .arg(localFolder).arg(remoteDir).arg(file->filename());
+
+        if (file->isFolder())
+        {
+            localFileManager->checkAndCreateFolderIfNotExists(folder);
+            if (!contentsProcessed->contains(file->filename()))
+            {
+                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
+            }
+            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
+                                                                file->owner(),
+                                                                file->size(),
+                                                                file->date(),
+                                                                file->time());
+        }
+        else if (localFileManager->isControlFile(file->filename()))
+        {
+            localFileManager->_ftpManager.downloadFile(remoteDir, file->filename(), folder);
+            dirContents->remove(file->filename());
+            QString filename = localFileManager->extractFileNameFromControlFile(file->filename());
+            QString editor;
+            qint64 since;
+            localFileManager->processControlFile(remoteDir, file->filename(), editor, since);
+            if (!contentsProcessed->contains(filename))
+            {
+                (*contentsProcessed)[filename] = FilePtr::create(filename);
+            }
+            (*contentsProcessed)[filename]->setUnderEdition(editor, since);
+        }
+        else
+        {
+            if (!contentsProcessed->contains(file->filename()))
+            {
+                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
+            }
+            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
+                                                                file->owner(),
+                                                                file->size(),
+                                                                file->date(),
+                                                                file->time());
+        }
+    }
+    if ((localFileManager->_exportFolder.length() == 0) ||  !localFolder.startsWith(localFileManager->_exportFolder))
+    {
+        emit localFileManager->getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
+    }
+    return contentsProcessed;
+}
+
+void LocalFilesManager::internal_deleteDirectory(LocalFilesManager *localFileManager, const QString &remoteDir)
+{
+    localFileManager->_ftpManager.deleteDirectory(remoteDir);
+    emit localFileManager->directoryDeleted(remoteDir);
 }

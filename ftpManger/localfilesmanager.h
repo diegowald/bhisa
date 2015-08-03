@@ -42,15 +42,6 @@ signals:
     void requestInitialize();
 
 public slots:
-    void on_fileDownloaded(const QString &remtoeDir, const QString &filename);
-    void on_fileUploaded(const QString &remoteDir, const QString &filename);
-    void on_fileDeleted(const QString &remoteDir, const QString &filename);
-
-    void on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents, const QString &localFolder);
-    void on_directoryCreated(const QString &remoteDir, const QString &directoryName);
-    void on_directoryDeleted(const QString &remoteDir);
-    void on_directoryChanged(const QString &remoteDir);
-
     void on_requestInitialize();
 
 private:
@@ -63,7 +54,19 @@ private:
     QString getControlFileName(const QString &filename);
     QString localPath(const QString &remotePath, const QString filename);
 
+private:
+
     static void internal_exportFolder(LocalFilesManager* localFileManager, const QString &remoteFolder, const QString &localFolder);
+
+    static void internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
+    static void internal_uploadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
+    static void internal_deleteFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
+
+    static FileList internal_getDirectoryContents(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &localFolder);
+    static void internal_createDirectory(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &directoryName);
+    static void internal_deleteDirectory(LocalFilesManager* localFileManager, const QString &remoteDir);
+    static void internal_changeDirectory(LocalFilesManager* localFileManager, const QString &remoteDir);
+
 private:
     bool _initialized;
     QString _localRootFolder;
