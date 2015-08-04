@@ -178,9 +178,30 @@ bool MainWindow::fileLockedByMe() const
 
 void MainWindow::on_actionExportar_triggered()
 {
-    qDebug() << ui->treeWidget->currentItem()->text(0);
-    QString remoteFolder = path(ui->treeWidget->currentItem());
-    QString localFolder = QFileDialog::getExistingDirectory(this, tr("Select folder"));
-    qDebug() << localFolder;
-    _fileManager.exportFolder(remoteFolder, localFolder);
+    if (ui->treeWidget->currentItem() != NULL)
+    {
+        qDebug() << ui->treeWidget->currentItem()->text(0);
+        QString remoteFolder = path(ui->treeWidget->currentItem());
+        QString localFolder = QFileDialog::getExistingDirectory(this, tr("Select folder"));
+        qDebug() << localFolder;
+        if (localFolder.length() > 0)
+        {
+            _fileManager.exportFolder(remoteFolder, localFolder);
+        }
+    }
+}
+
+void MainWindow::on_actionImportar_triggered()
+{
+    if (ui->treeWidget->currentItem() != NULL)
+    {
+        qDebug() << ui->treeWidget->currentItem()->text(0);
+        QString remoteFolder = path(ui->treeWidget->currentItem());
+        QString localFolder = QFileDialog::getExistingDirectory(this, tr("Select folder"));
+        qDebug() << localFolder;
+        if (localFolder.length() > 0)
+        {
+            _fileManager.importFolder(localFolder, remoteFolder);
+        }
+    }
 }

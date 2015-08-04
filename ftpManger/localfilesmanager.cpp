@@ -169,6 +169,12 @@ void LocalFilesManager::exportFolder(const QString &remoteFolder, const QString 
     QFuture<void> future = QtConcurrent::run(internal_exportFolder, this, remoteFolder, localFolder);
 }
 
+void LocalFilesManager::importFolder(const QString &localFolder, const QString &remoteFolder)
+{
+    _importFolder = localFolder;
+    QFuture<void> future = QtConcurrent::run(internal_importFolder, this, localFolder, remoteFolder);
+}
+
 void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManager, const QString &remoteFolder, const QString &localFolder)
 {
     FileList list = internal_getDirectoryContents(localFileManager, remoteFolder, localFolder);
@@ -191,6 +197,10 @@ void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManage
     }
 }
 
+void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManager, const QString &localFolder, const QString &remoteFolder)
+{
+
+}
 
 void LocalFilesManager::internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename)
 {

@@ -28,6 +28,7 @@ public:
     QUrl getLocalURL(const QString &remoteDir, const QString &filename);
 
     void exportFolder(const QString &remoteFolder, const QString &localFolder);
+    void importFolder(const QString &localFolder, const QString &remoteFolder);
 
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
@@ -57,6 +58,7 @@ private:
 private:
 
     static void internal_exportFolder(LocalFilesManager* localFileManager, const QString &remoteFolder, const QString &localFolder);
+    static void internal_importFolder(LocalFilesManager* localFileManager, const QString &localFolder, const QString &remoteFolder);
 
     static void internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
     static void internal_uploadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);

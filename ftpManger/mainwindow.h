@@ -37,6 +37,8 @@ private slots:
 
     void on_actionExportar_triggered();
 
+    void on_actionImportar_triggered();
+
 private:
     QString path(QTreeWidgetItem *item);
     bool fileLockedByMe() const;
