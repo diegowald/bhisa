@@ -58,7 +58,7 @@ private:
 private:
 
     static void internal_exportFolder(LocalFilesManager* localFileManager, const QString &remoteFolder, const QString &localFolder);
-    static void internal_importFolder(LocalFilesManager* localFileManager, const QString &localFolder, const QString &remoteFolder);
+    static void internal_importFolder(LocalFilesManager* localFileManager, const QString &localFolder, const QString &remoteFolder, const QString &localRootFolder = "-");
 
     static void internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
     static void internal_uploadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
@@ -79,7 +79,7 @@ private:
     bool _isWindows;
     FtpManager _ftpManager;
     QString _exportFolder;
-
+    QString _importFolder;
 };
 
 #endif // LOCALFILESMANAGER_H

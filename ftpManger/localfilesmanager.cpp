@@ -6,7 +6,9 @@
 #include "file.h"
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
-
+#include <QFileInfo>
+#include <QFileInfoList>
+#include <QDir>
 
 #include <QDebug>
 
@@ -172,7 +174,7 @@ void LocalFilesManager::exportFolder(const QString &remoteFolder, const QString 
 void LocalFilesManager::importFolder(const QString &localFolder, const QString &remoteFolder)
 {
     _importFolder = localFolder;
-    QFuture<void> future = QtConcurrent::run(internal_importFolder, this, localFolder, remoteFolder);
+    QFuture<void> future = QtConcurrent::run(internal_importFolder, this, localFolder, remoteFolder, localFolder);
 }
 
 void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManager, const QString &remoteFolder, const QString &localFolder)
@@ -197,9 +199,53 @@ void LocalFilesManager::internal_exportFolder(LocalFilesManager *localFileManage
     }
 }
 
-void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManager, const QString &localFolder, const QString &remoteFolder)
+void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManager, const QString &localFolder, const QString &remoteFolder, const QString &localRootFolder)
 {
+    QDir dir(localFolder);
+    QString root = localRootFolder;
+    if (localFolder == localFileManager->_importFolder)
+    {
+        root.chop(dir.dirName().length() + 1);
 
+        qDebug() << root;
+    }
+
+    QFileInfoList list = dir.entryInfoList();
+    for (int i = 0; i < list.size(); ++i) {
+        QFileInfo fileInfo = list.at(i);
+        QString filename = fileInfo.fileName();
+        if ((filename != ".") && (filename != ".."))
+        {
+            qDebug() << fileInfo.fileName();
+            qDebug() << fileInfo.isDir();
+            if (fileInfo.isDir())
+            {
+                qDebug() << fileInfo.absoluteFilePath();
+                qDebug() << fileInfo.absolutePath();
+
+                internal_importFolder(localFileManager, fileInfo.absoluteFilePath(), remoteFolder, root);
+            }
+            else
+            {
+                //uploadFile(remoteFolder, fileInfo.fileName());
+                QString remFolder = remoteFolder;
+                if (remFolder.endsWith("/"))
+                {
+                    remFolder.chop(1);
+                }
+                remFolder += fileInfo.absolutePath().replace(root, "");
+                qDebug() << remoteFolder;
+                qDebug() << fileInfo.absolutePath().replace(root, "");
+                qDebug() << remFolder;
+                qDebug() << fileInfo.absoluteFilePath();
+                localFileManager->_ftpManager.uploadFile(remFolder, fileInfo.fileName(), fileInfo.absoluteFilePath());
+            }
+        }
+    }
+    if (localFolder == localFileManager->_importFolder)
+    {
+        localFileManager->_importFolder = "";
+    }
 }
 
 void LocalFilesManager::internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename)
