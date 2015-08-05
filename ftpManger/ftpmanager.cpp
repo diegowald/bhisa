@@ -271,8 +271,27 @@ bool FtpManager::createDirectory(const QString &remoteDir, const QString &direct
         emit requestInitialize();
     if (!_initialized)
         throw FtpException();
-    //TODO: implement it
-    return false;
+
+    try
+    {
+        Poco::Timespan time(0, 0, 1, 0, 0);
+        std::string host = _url.toStdString();
+        std::string uname = _user.toStdString();
+        std::string password = _password.toStdString();
+
+        Poco::Net::FTPClientSession session(host);
+        session.setTimeout(time);
+        session.login(uname, password);
+        std::string dir = QString(remoteDir + "/" + directoryName).toStdString();
+        session.createDirectory(dir);
+        session.close();
+        return true;
+    }
+    catch (Poco::Net::FTPException &ex)
+    {
+        std::cerr << ex.displayText();
+        return false;
+    }
 }
 
 bool FtpManager::deleteDirectory(const QString &remoteDir)

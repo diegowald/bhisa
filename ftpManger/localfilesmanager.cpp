@@ -206,8 +206,13 @@ void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManage
     if (localFolder == localFileManager->_importFolder)
     {
         root.chop(dir.dirName().length() + 1);
-
         qDebug() << root;
+    }
+
+    {
+        QString remFolder = remoteFolder + dir.absolutePath().replace(root, "");
+        remFolder.chop(dir.dirName().length());
+        localFileManager->_ftpManager.createDirectory(remFolder, dir.dirName());
     }
 
     QFileInfoList list = dir.entryInfoList();
@@ -216,13 +221,8 @@ void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManage
         QString filename = fileInfo.fileName();
         if ((filename != ".") && (filename != ".."))
         {
-            qDebug() << fileInfo.fileName();
-            qDebug() << fileInfo.isDir();
             if (fileInfo.isDir())
             {
-                qDebug() << fileInfo.absoluteFilePath();
-                qDebug() << fileInfo.absolutePath();
-
                 internal_importFolder(localFileManager, fileInfo.absoluteFilePath(), remoteFolder, root);
             }
             else
@@ -234,11 +234,10 @@ void LocalFilesManager::internal_importFolder(LocalFilesManager *localFileManage
                     remFolder.chop(1);
                 }
                 remFolder += fileInfo.absolutePath().replace(root, "");
-                qDebug() << remoteFolder;
-                qDebug() << fileInfo.absolutePath().replace(root, "");
-                qDebug() << remFolder;
-                qDebug() << fileInfo.absoluteFilePath();
-                localFileManager->_ftpManager.uploadFile(remFolder, fileInfo.fileName(), fileInfo.absoluteFilePath());
+                if (!localFileManager->isControlFile(fileInfo.fileName()))
+                {
+                    localFileManager->_ftpManager.uploadFile(remFolder, fileInfo.fileName(), fileInfo.absoluteFilePath());
+                }
             }
         }
     }

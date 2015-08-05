@@ -46,6 +46,24 @@
        </column>
       </widget>
       <widget class="QTableWidget" name="tableWidget">
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectRows</enum>
+       </property>
+       <property name="showGrid">
+        <bool>false</bool>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
        <column>
         <property name="text">
          <string>filename</string>
@@ -77,7 +95,7 @@
      <x>0</x>
      <y>0</y>
      <width>675</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

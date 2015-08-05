@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "localfilesmanager.h"
 #include <QTreeWidgetItem>
+#include <QTableWidgetItem>
 
 namespace Ui {
 class MainWindow;
@@ -39,9 +40,12 @@ private slots:
 
     void on_actionImportar_triggered();
 
+    void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
+
 private:
     QString path(QTreeWidgetItem *item);
     bool fileLockedByMe() const;
+    void openFile(const QString &remoteDir, const QString &filename);
 
 private:
     Ui::MainWindow *ui;

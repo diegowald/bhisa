@@ -43,18 +43,25 @@ void MainWindow::on_fileDownloaded(const QString &remoteDir, const QString &file
     {
         if (_fileManager.lockFile(remoteDir, filename))
         {
-            QDesktopServices::openUrl(_fileManager.getLocalURL(remoteDir, filename));
+            openFile(remoteDir, filename);
         }
     }
 }
 
+void MainWindow::openFile(const QString &remoteDir, const QString &filename)
+{
+    QDesktopServices::openUrl(_fileManager.getLocalURL(remoteDir, filename));
+}
+
 void MainWindow::on_fileUploaded(const QString &remoteDir, const QString &filename)
 {
+    (void) remoteDir;
     statusBar()->showMessage(tr("File %1 uploaded.").arg(filename), 3000);
 }
 
 void MainWindow::on_fileDeleted(const QString &remoteDir, const QString &filename)
 {
+    (void) remoteDir;
     statusBar()->showMessage(tr("File %1 deleted.").arg(filename), 3000);
 }
 
@@ -98,7 +105,7 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
 
 void MainWindow::on_directoryCreated(const QString &remoteDir, const QString &directoryName)
 {
-    statusBar()->showMessage(tr("Folder %1 created.").arg(remoteDir), 3000);
+    statusBar()->showMessage(tr("Folder %1 created on %2.").arg(directoryName).arg(remoteDir), 3000);
 }
 
 void MainWindow::on_directoryDeleted(const QString &remoteDir)
@@ -147,9 +154,16 @@ void MainWindow::on_actionTomar_Para_edicion_triggered()
     {
         QString folder = path(ui->treeWidget->currentItem());
         QString file = ui->tableWidget->item(ui->tableWidget->currentRow(), 0)->text();
-        _lockAndOpenAfterDownloadFile = file;
-        _fileManager.downloadFile(folder, file);
-        statusBar()->showMessage(tr("Downloading and locking %1.").arg(file), 3000);
+        if (!fileLockedByMe())
+        {
+            _lockAndOpenAfterDownloadFile = file;
+            _fileManager.downloadFile(folder, file);
+            statusBar()->showMessage(tr("Downloading and locking %1.").arg(file), 3000);
+        }
+        else
+        {
+            openFile(folder, file);
+        }
     }
 }
 
@@ -172,7 +186,7 @@ bool MainWindow::fileLockedByMe() const
     qDebug() << ui->tableWidget->currentRow();
     int row = ui->tableWidget->currentRow();
     bool isLocked =  ui->tableWidget->item(row, 3)->text() == tr("Yes");
-    bool author = ui->tableWidget->item(row, 2)->text() == _fileManager.loggedUser();
+    bool author = ui->tableWidget->item(row, 2)->text().toLower() == _fileManager.loggedUser().toLower();
     return isLocked && author;
 }
 
@@ -204,4 +218,10 @@ void MainWindow::on_actionImportar_triggered()
             _fileManager.importFolder(localFolder, remoteFolder);
         }
     }
+}
+
+void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+    (void) item;
+    on_actionTomar_Para_edicion_triggered();
 }
