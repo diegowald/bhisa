@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QDateTime>
 #include <QSharedPointer>
+#include <qpermission.h>
 
 class File: public QObject
 {
@@ -35,6 +36,8 @@ public:
                      const QString &user,
                      unsigned int size, const QString &date, const QString &time);
 
+    void setPermissions(QPermissionList &permissions);
+
 private:
     QString _filename;
 
@@ -48,7 +51,7 @@ private:
     unsigned int _size;
     QString _date;
     QString _time;
-
+    QPermissionList _permissionList;
 };
 
 typedef QSharedPointer<File> FilePtr;

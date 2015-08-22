@@ -47,27 +47,31 @@ public slots:
 
 private:
     void processControlFile(const QString &dir, const QString &filename, QString &editor, qint64 &since);
+    QPermissionList processPermissionsFile(const QString &remoteDir, const QString &filename);
 
     void checkAndCreateFolderIfNotExists(const QString &foldername);
 
     bool isControlFile(const QString &filename);
+    bool isPermissionsFile(const QString &filename);
+    bool isUsersListFile(const QString &filename);
+
     QString extractFileNameFromControlFile(const QString &controlFileName);
     QString getControlFileName(const QString &filename);
     QString localPath(const QString &remotePath, const QString filename);
 
 private:
 
-    static void internal_exportFolder(LocalFilesManager* localFileManager, const QString &remoteFolder, const QString &localFolder);
-    static void internal_importFolder(LocalFilesManager* localFileManager, const QString &localFolder, const QString &remoteFolder, const QString &localRootFolder = "-");
+    void internal_exportFolder(const QString &remoteFolder, const QString &localFolder);
+    void internal_importFolder(const QString &localFolder, const QString &remoteFolder, const QString &localRootFolder = "-");
 
-    static void internal_downloadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
-    static void internal_uploadFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
-    static void internal_deleteFile(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &filename);
+    void internal_downloadFile(const QString &remoteDir, const QString &filename);
+    void internal_uploadFile(const QString &remoteDir, const QString &filename);
+    void internal_deleteFile(const QString &remoteDir, const QString &filename);
 
-    static FileList internal_getDirectoryContents(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &localFolder);
-    static void internal_createDirectory(LocalFilesManager* localFileManager, const QString &remoteDir, const QString &directoryName);
-    static void internal_deleteDirectory(LocalFilesManager* localFileManager, const QString &remoteDir);
-    static void internal_changeDirectory(LocalFilesManager* localFileManager, const QString &remoteDir);
+    FileList internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder);
+    void internal_createDirectory(const QString &remoteDir, const QString &directoryName);
+    void internal_deleteDirectory(const QString &remoteDir);
+    void internal_changeDirectory(const QString &remoteDir);
 
 private:
     bool _initialized;

@@ -20,14 +20,16 @@ SOURCES += main.cpp\
     dlglogin.cpp \
     file.cpp \
     ftpexception.cpp \
-    localfilesmanager.cpp
+    localfilesmanager.cpp \
+    qpermission.cpp
 
 HEADERS  += mainwindow.h \
     ftpmanager.h \
     dlglogin.h \
     file.h \
     ftpexception.h \
-    localfilesmanager.h
+    localfilesmanager.h \
+    qpermission.h
 
 FORMS    += mainwindow.ui \
     dlglogin.ui

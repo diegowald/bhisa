@@ -94,3 +94,8 @@ QString File::time() const
 {
     return _time;
 }
+
+void File::setPermissions(QPermissionList &permissions)
+{
+    _permissionList = permissions;
+}
