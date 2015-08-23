@@ -114,6 +114,12 @@ QString LocalFilesManager::extractFileNameFromControlFile(const QString &control
     return s.replace(".ctl.", "");
 }
 
+QString LocalFilesManager::extractFileNameFromPermissionsFile(const QString &filename)
+{
+    QString s = filename;
+    return s.replace(".permissions.", "");
+}
+
 QString LocalFilesManager::getControlFileName(const QString &filename)
 {
     return QString(".ctl.%1").arg(filename);
@@ -129,6 +135,31 @@ void LocalFilesManager::processControlFile(const QString &dir, const QString &fi
     stream >> editor;
     stream >> since;
     file.close();
+}
+
+QPermissionList LocalFilesManager::processPermissionsFile(const QString &remoteDir, const QString &filename)
+{
+    QPermissionList permissions;
+    QString filePath = remoteDir.endsWith("/") ? remoteDir + filename : remoteDir + "/" + filename;
+    QFile file(filePath);
+
+    if (file.open(QIODevice::ReadOnly))
+    {
+        // el formato es Permission:username
+
+        QTextStream stream(&file);
+        while (!stream.atEnd())
+        {
+            QString line = stream.readLine();
+
+            QPermission permission;
+            QStringList data = line.split(":");
+            permission.setPermission(data.at(0));
+            permission.setUser(data.at(1));
+            permissions.append(permission);
+        }
+        file.close();
+    }
 }
 
 bool LocalFilesManager::lockFile(const QString &remoteDir, const QString &filename)
@@ -341,7 +372,15 @@ FileList LocalFilesManager::internal_getDirectoryContents(const QString &remoteD
         }
         else if (isUsersListFile(file->filename()))
         {
-            processUsersListFile(file->filename());
+            _ftpManager.downloadFile(remoteDir, file->filename(), folder);
+            dirContents->remove(file->filename());
+            QString filename = extractFileNameFromPermissionsFile(file->filename());
+            QPermissionList permissions = processPermissionsFile(remoteDir, file->filename());
+            if (!contentsProcessed->contains(filename))
+            {
+                (*contentsProcessed)[filename] = FilePtr::create(filename);
+            }
+            (*contentsProcessed)[filename]->setPermissions(permissions);
         }
         else
         {

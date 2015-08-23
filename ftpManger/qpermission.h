@@ -7,8 +7,9 @@ class QPermission : public QObject
 {
     Q_OBJECT
 public:
-    typedef enum class PERMIT
+    enum class PERMIT
     {
+        none,
         canRead,
         canWrite,
         Administrator
@@ -18,6 +19,15 @@ public:
     QPermission( const QPermission& other );
     QPermission( QPermission& other );
 
+    void setUser(const QString &user);
+    void setPermission(PERMIT permission);
+    void setPermission(const QString &permission);
+
+    QString user() const;
+    PERMIT permission() const;
+    QString permissionString() const;
+
+    QPermission& operator=(const QPermission& other);
 signals:
 
 public slots:
@@ -25,6 +35,8 @@ private:
     QString _userName;
     PERMIT _permit;
 };
+
+
 
 typedef QList<QPermission> QPermissionList;
 

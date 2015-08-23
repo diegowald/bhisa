@@ -139,6 +139,7 @@ QString MainWindow::path(QTreeWidgetItem *item)
 void MainWindow::on_treeWidget_itemSelectionChanged()
 {
     QTreeWidgetItem * item = ui->treeWidget->selectedItems().at(0);
+    // chequear los permisos que tengo
     _fileManager.getDirectoryContents(path(item));
     statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
 }

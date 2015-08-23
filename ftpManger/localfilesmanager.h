@@ -56,6 +56,7 @@ private:
     bool isUsersListFile(const QString &filename);
 
     QString extractFileNameFromControlFile(const QString &controlFileName);
+    QString extractFileNameFromPermissionsFile(const QString &filename);
     QString getControlFileName(const QString &filename);
     QString localPath(const QString &remotePath, const QString filename);
 

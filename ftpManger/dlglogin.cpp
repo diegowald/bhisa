@@ -6,6 +6,9 @@ DlgLogin::DlgLogin(QWidget *parent) :
     ui(new Ui::DlgLogin)
 {
     ui->setupUi(this);
+    ui->txtURL->setText("adbhisa.ddns.net");
+    ui->lblUrl->setVisible(false);
+    ui->txtURL->setVisible(false);
 }
 
 DlgLogin::~DlgLogin()
