@@ -30,6 +30,7 @@ public:
     void exportFolder(const QString &remoteFolder, const QString &localFolder);
     void importFolder(const QString &localFolder, const QString &remoteFolder);
 
+    QString user() const;
 signals:
     void fileDownloaded(const QString &remtoeDir, const QString &filename);
     void fileUploaded(const QString &remoteDir, const QString &filename);

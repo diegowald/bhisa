@@ -75,7 +75,31 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
     {
         if (file->isFolder())
         {
-            item->addChild(new QTreeWidgetItem(QStringList() << file->filename()));
+            bool addIt = false;
+            QTreeWidgetItem *folderItem = new QTreeWidgetItem(QStringList() << file->filename());
+            switch (file->myPermission(_fileManager.user()))
+            {
+            case QPermission::PERMIT::Administrator:
+                folderItem->setTextColor(0, Qt::red);
+                addIt = true;
+                break;
+            case QPermission::PERMIT::canWrite:
+                folderItem->setTextColor(0, Qt::black);
+                addIt = true;
+                break;
+            case QPermission::PERMIT::canRead:
+                folderItem->setTextColor(0, Qt::darkGray);
+                addIt = true;
+                break;
+            case QPermission::PERMIT::none:
+            default:
+                folderItem->setTextColor(0, Qt::lightGray);
+                break;
+            }
+            if (addIt)
+            {
+                item->addChild(folderItem);
+            }
         }
         else
         {

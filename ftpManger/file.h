@@ -37,7 +37,7 @@ public:
                      unsigned int size, const QString &date, const QString &time);
 
     void setPermissions(QPermissionList &permissions);
-
+    QPermission::PERMIT myPermission(const QString &userName);
 private:
     QString _filename;
 

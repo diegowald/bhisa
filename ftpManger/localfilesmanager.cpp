@@ -407,3 +407,8 @@ void LocalFilesManager::internal_deleteDirectory(const QString &remoteDir)
     _ftpManager.deleteDirectory(remoteDir);
     emit directoryDeleted(remoteDir);
 }
+
+QString LocalFilesManager::user() const
+{
+    return _user;
+}

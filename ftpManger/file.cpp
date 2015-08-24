@@ -99,3 +99,19 @@ void File::setPermissions(QPermissionList &permissions)
 {
     _permissionList = permissions;
 }
+
+QPermission::PERMIT File::myPermission(const QString &userName)
+{
+    if (_permissionList.count() == 0)
+        return QPermission::PERMIT::Administrator;
+
+    QString s = userName.toLower();
+    foreach (QPermission permission, _permissionList)
+    {
+        if (permission.user().toLower() == s)
+        {
+            return permission.permission();
+        }
+    }
+    return QPermission::PERMIT::none;
+}
