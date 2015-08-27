@@ -374,9 +374,9 @@ NodeList LocalFilesManager::internal_getDirectoryContents(const QString &remoteD
         else if (isUsersListFile(node->filename()))
         {
             _ftpManager.downloadFile(remoteDir, node->filename(), folder);
-            dirContents->remove(file->filename());
-            QString filename = extractFileNameFromPermissionsFile(file->filename());
-            QPermissionList permissions = processPermissionsFile(remoteDir, file->filename());
+            dirContents->remove(node->filename());
+            QString filename = extractFileNameFromPermissionsFile(node->filename());
+            QPermissionList permissions = processPermissionsFile(remoteDir, node->filename());
             if (!contentsProcessed->contains(filename))
             {
                 (*contentsProcessed)[filename] = FilePtr::create(filename);
@@ -385,15 +385,16 @@ NodeList LocalFilesManager::internal_getDirectoryContents(const QString &remoteD
         }
         else
         {
-            if (!contentsProcessed->contains(file->filename()))
+            FilePtr f
+            if (!contentsProcessed->contains(node->filename()))
             {
-                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
+                (*contentsProcessed)[node->filename()] = FilePtr::create(node->filename());
             }
-            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
-                                                                file->owner(),
-                                                                file->size(),
-                                                                file->date(),
-                                                                file->time());
+            (*contentsProcessed)[node->filename()]->setFileData(node->permissions(),
+                                                                node->owner(),
+                                                                node->size(),
+                                                                node->date(),
+                                                                node->time());
         }
     }
     if ((_exportFolder.length() == 0) ||  !localFolder.startsWith(_exportFolder))
