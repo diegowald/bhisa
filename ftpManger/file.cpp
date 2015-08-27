@@ -1,11 +1,11 @@
 #include "file.h"
 
-File::File(QObject *parent):QObject(parent)
+File::File(QObject *parent): Node ("", false, parent)
 {
 
 }
 
-File::File(const QString &filename, QObject *parent) : QObject(parent)
+File::File(const QString &filename, QObject *parent) : Node(filename, false, parent)
 {
     _filename = filename;
 

@@ -21,7 +21,9 @@ SOURCES += main.cpp\
     file.cpp \
     ftpexception.cpp \
     localfilesmanager.cpp \
-    qpermission.cpp
+    qpermission.cpp \
+    node.cpp \
+    folder.cpp
 
 HEADERS  += mainwindow.h \
     ftpmanager.h \
@@ -29,7 +31,9 @@ HEADERS  += mainwindow.h \
     file.h \
     ftpexception.h \
     localfilesmanager.h \
-    qpermission.h
+    qpermission.h \
+    node.h \
+    folder.h
 
 FORMS    += mainwindow.ui \
     dlglogin.ui

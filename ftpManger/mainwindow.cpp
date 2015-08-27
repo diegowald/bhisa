@@ -6,6 +6,8 @@
 #include <QUrl>
 #include <QDebug>
 #include <QFileDialog>
+#include "file.h"
+#include "folder.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -26,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QString _currentDir = _fileManager.getCurrentDirectory();
     ui->treeWidget->clear();
     QTreeWidgetItem *item = new QTreeWidgetItem(QStringList() << _currentDir);
+    item->setData(0, Qt::UserRole, QVariant::fromValue(QPermission::PERMIT::Administrator));
     ui->treeWidget->addTopLevelItem(item);
     ui->treeWidget->setCurrentItem(item);
     ui->tableWidget->setAlternatingRowColors(true);
@@ -65,19 +68,22 @@ void MainWindow::on_fileDeleted(const QString &remoteDir, const QString &filenam
     statusBar()->showMessage(tr("File %1 deleted.").arg(filename), 3000);
 }
 
-void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents)
+void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, NodePtr dirContents)
 {
     statusBar()->showMessage(tr("Folder %1 retrieved.").arg(remoteDir), 3000);
     ui->tableWidget->setRowCount(0);
     QTreeWidgetItem *item = ui->treeWidget->currentItem();
     qDeleteAll(item->takeChildren());
-    foreach (FilePtr file, *dirContents)
+    FolderPtr parentFolder = qSharedPointerCast<Folder>(dirContents);
+    foreach (NodePtr node, parentFolder->childNodes())
     {
-        if (file->isFolder())
+        if (node->isFolder())
         {
+            FolderPtr folder = qSharedPointerCast<Folder>(node);
             bool addIt = false;
-            QTreeWidgetItem *folderItem = new QTreeWidgetItem(QStringList() << file->filename());
-            switch (file->myPermission(_fileManager.user()))
+            QTreeWidgetItem *folderItem = new QTreeWidgetItem(QStringList() << folder->filename());
+            folderItem->setData(0, Qt::UserRole, QVariant::fromValue(folder->myPermission(_fileManager.user())));
+            switch (folder->myPermission(_fileManager.user()))
             {
             case QPermission::PERMIT::Administrator:
                 folderItem->setTextColor(0, Qt::red);
@@ -100,9 +106,11 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Fil
             {
                 item->addChild(folderItem);
             }
+//            _folderInfo[remoteDir] =
         }
         else
         {
+            FilePtr file = qSharedPointerCast<File>(node);
             int currentRow = ui->tableWidget->rowCount();
             ui->tableWidget->insertRow(currentRow);
             ui->tableWidget->setItem(currentRow, 0, new QTableWidgetItem(file->filename()));
@@ -163,9 +171,17 @@ QString MainWindow::path(QTreeWidgetItem *item)
 void MainWindow::on_treeWidget_itemSelectionChanged()
 {
     QTreeWidgetItem * item = ui->treeWidget->selectedItems().at(0);
-    // chequear los permisos que tengo
-    _fileManager.getDirectoryContents(path(item));
-    statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
+    QPermission::PERMIT permission = item->data(0, Qt::UserRole).value<QPermission::PERMIT>();
+    if (permission != QPermission::PERMIT::none)
+    {
+        // chequear los permisos que tengo
+        _fileManager.getDirectoryContents(path(item));
+        statusBar()->showMessage(tr("Getting contents of %1 folder").arg(path(item)), 3000);
+    }
+    else
+    {
+        statusBar()->showMessage(tr("Forbidden."));
+    }
 }
 
 void MainWindow::on_actionActualizar_triggered()

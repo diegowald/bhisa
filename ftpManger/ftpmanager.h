@@ -2,7 +2,7 @@
 #define FTPMANAGER_H
 
 #include <QObject>
-#include "file.h"
+#include "node.h"
 
 
 class FtpManager : public QObject
@@ -18,7 +18,7 @@ public:
     bool deleteFile(const QString &remoteDir, const QString &filename);
 
     QString getCurrentDirectory();
-    FileList getDirectoryContents(const QString &remoteDir, const QString &localFolder);
+    NodeList getDirectoryContents(const QString &remoteDir, const QString &localFolder);
     bool createDirectory(const QString &remoteDir, const QString &directoryName);
     bool deleteDirectory(const QString &remoteDir);
     bool changeDirectory(const QString &remoteDir);
@@ -33,9 +33,9 @@ private:
 
     static void stream_copy_n(std::istream & in, std::size_t count, std::ostream & out);
 
-    static FileList parseDirectoryContents(std::ostringstream &content, bool isWindows);
-    static FileList parseDirectoryContentsLinux(std::ostringstream &content);
-    static FileList parseDirectoryContentsWindows(std::ostringstream &content);
+    NodeList parseDirectoryContents(std::ostringstream &content, bool isWindows);
+    NodeList parseDirectoryContentsLinux(std::ostringstream &content);
+    NodeList parseDirectoryContentsWindows(std::ostringstream &content);
 
     void gatherServerType();
 

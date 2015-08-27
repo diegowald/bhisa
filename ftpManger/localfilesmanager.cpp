@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QFileInfoList>
 #include <QDir>
+#include "folder.h"
 
 #include <QDebug>
 
@@ -61,7 +62,7 @@ QString LocalFilesManager::getCurrentDirectory()
 
 void LocalFilesManager::getDirectoryContents(const QString &remoteDir)
 {
-    QFuture<FileList> future = QtConcurrent::run(this, &LocalFilesManager::internal_getDirectoryContents, remoteDir, _ftpSessionFolder);
+    QFuture<NodeList> future = QtConcurrent::run(this, &LocalFilesManager::internal_getDirectoryContents, remoteDir, _ftpSessionFolder);
 }
 
 void LocalFilesManager::createDirectory(const QString &remoteDir, const QString &directoryName)
@@ -220,7 +221,7 @@ void LocalFilesManager::importFolder(const QString &localFolder, const QString &
 
 void LocalFilesManager::internal_exportFolder(const QString &remoteFolder, const QString &localFolder)
 {
-    FileList list = internal_getDirectoryContents(remoteFolder, localFolder);
+    NodeList list = internal_getDirectoryContents(remoteFolder, localFolder);
     foreach (FilePtr file, *list)
     {
         if (file->isFolder())
@@ -319,60 +320,60 @@ void LocalFilesManager::internal_deleteFile(const QString &remoteDir, const QStr
 }
 
 
-FileList LocalFilesManager::internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder)
+NodeList LocalFilesManager::internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder)
 {
-    FileList dirContents = _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder);
-    FileList contentsProcessed = FileList::create();
-    foreach (FilePtr file, *dirContents)
+    NodeList dirContents = _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder);
+    NodeList contentsProcessed = NodeList::create();
+    foreach (NodePtr node, *dirContents)
     {
         QString folder = (remoteDir == "/") ?
-                    QString("%1%2").arg(localFolder).arg(file->filename())
+                    QString("%1%2").arg(localFolder).arg(node->filename())
                   :
                     QString("%1/%2/%3")
-                    .arg(localFolder).arg(remoteDir).arg(file->filename());
+                    .arg(localFolder).arg(remoteDir).arg(node->filename());
 
-        if (file->isFolder())
+        if (node->isFolder())
         {
             checkAndCreateFolderIfNotExists(folder);
-            if (!contentsProcessed->contains(file->filename()))
+            if (!contentsProcessed->contains(node->filename()))
             {
-                (*contentsProcessed)[file->filename()] = FilePtr::create(file->filename());
+                (*contentsProcessed)[node->filename()] = FolderPtr::create(node->filename());
             }
-            (*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
+            /*(*contentsProcessed)[file->filename()]->setFileData(file->permissions(),
                                                                 file->owner(),
                                                                 file->size(),
                                                                 file->date(),
-                                                                file->time());
+                                                                file->time());*/
         }
-        else if (isControlFile(file->filename()))
+        else if (isControlFile(node->filename()))
         {
-            _ftpManager.downloadFile(remoteDir, file->filename(), folder);
-            dirContents->remove(file->filename());
-            QString filename = extractFileNameFromControlFile(file->filename());
+            _ftpManager.downloadFile(remoteDir, node->filename(), folder);
+            dirContents->remove(node->filename());
+            QString filename = extractFileNameFromControlFile(node->filename());
             QString editor;
             qint64 since;
-            processControlFile(remoteDir, file->filename(), editor, since);
+            processControlFile(remoteDir, node->filename(), editor, since);
             if (!contentsProcessed->contains(filename))
             {
                 (*contentsProcessed)[filename] = FilePtr::create(filename);
             }
-            (*contentsProcessed)[filename]->setUnderEdition(editor, since);
+            qSharedPointerCast<File>((*contentsProcessed)[filename])->setUnderEdition(editor, since);
         }
-        else if (isPermissionsFile(file->filename()))
+        else if (isPermissionsFile(node->filename()))
         {
-            _ftpManager.downloadFile(remoteDir, file->filename(), folder);
-            dirContents->remove(file->filename());
-            QString filename = extractFileNameFromPermissionsFile(file->filename());
-            QPermissionList permissions = processPermissionsFile(remoteDir, file->filename());
+            _ftpManager.downloadFile(remoteDir, node->filename(), folder);
+            dirContents->remove(node->filename());
+            QString filename = extractFileNameFromPermissionsFile(node->filename());
+            QPermissionList permissions = processPermissionsFile(remoteDir, node->filename());
             if (!contentsProcessed->contains(filename))
             {
                 (*contentsProcessed)[filename] = FilePtr::create(filename);
             }
             (*contentsProcessed)[filename]->setPermissions(permissions);
         }
-        else if (isUsersListFile(file->filename()))
+        else if (isUsersListFile(node->filename()))
         {
-            _ftpManager.downloadFile(remoteDir, file->filename(), folder);
+            _ftpManager.downloadFile(remoteDir, node->filename(), folder);
             dirContents->remove(file->filename());
             QString filename = extractFileNameFromPermissionsFile(file->filename());
             QPermissionList permissions = processPermissionsFile(remoteDir, file->filename());

@@ -5,8 +5,8 @@
 #include <QDateTime>
 #include <QSharedPointer>
 #include <qpermission.h>
-
-class File: public QObject
+#include <node.h>
+class File: public Node
 {
     Q_OBJECT
 public:
@@ -55,6 +55,6 @@ private:
 };
 
 typedef QSharedPointer<File> FilePtr;
-typedef QSharedPointer<QMap<QString, FilePtr>> FileList;
+//typedef QSharedPointer<QMap<QString, FilePtr>> FileList;
 
 #endif // FILE_H

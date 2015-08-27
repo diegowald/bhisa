@@ -1,11 +1,13 @@
 #include "mainwindow.h"
 #include <QApplication>
-#include "file.h"
+#include "node.h"
 #include <QList>
 
 int main(int argc, char *argv[])
 {
-    qRegisterMetaType<FileList>("FileList");
+    qRegisterMetaType<NodeList>("NodeList");
+    qRegisterMetaType<NodePtr>("NodePtr");
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();

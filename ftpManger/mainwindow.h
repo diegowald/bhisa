@@ -23,7 +23,7 @@ public slots:
     void on_fileUploaded(const QString &remoteDir, const QString &filename);
     void on_fileDeleted(const QString &remoteDir, const QString &filename);
 
-    void on_getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents);
+    void on_getDirectoryContentsDownloaded(const QString &remoteDir, NodePtr dirContents);
     void on_directoryCreated(const QString &remoteDir, const QString &directoryName);
     void on_directoryDeleted(const QString &remoteDir);
     void on_directoryChanged(const QString &remoteDir);
@@ -51,6 +51,7 @@ private:
     Ui::MainWindow *ui;
     LocalFilesManager _fileManager;
     QString _lockAndOpenAfterDownloadFile;
+    QMap<QString, NodePtr> _folderInfo;
 };
 
 #endif // MAINWINDOW_H

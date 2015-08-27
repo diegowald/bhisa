@@ -8,6 +8,8 @@
 #include <QtConcurrent/QtConcurrent>
 
 #include "ftpexception.h"
+#include "file.h"
+#include "folder.h"
 
 FtpManager::FtpManager(QObject *parent) : QObject(parent), _url(""), _user(""), _password("")
 
@@ -162,7 +164,7 @@ bool FtpManager::deleteFile(const QString &remoteDir, const QString &filename)
     }
 }
 
-FileList FtpManager::getDirectoryContents(const QString &remoteDir, const QString &localFolder)
+NodeList FtpManager::getDirectoryContents(const QString &remoteDir, const QString &localFolder)
 {
     if (!_initialized)
         emit requestInitialize();
@@ -186,13 +188,13 @@ FileList FtpManager::getDirectoryContents(const QString &remoteDir, const QStrin
         session.endList();
         session.close();
         std::cerr << os.str();
-        FileList dirContents = parseDirectoryContents(os, _isWindows);
+        NodeList dirContents = parseDirectoryContents(os, _isWindows);
         return dirContents;
     }
     catch (Poco::Net::FTPException &ex)
     {
         std::cerr << ex.displayText();
-        return FileList::create();
+        return NodeList::create();
     }
 }
 
@@ -220,7 +222,7 @@ bool FtpManager::fileExists(const QString &remoteDir, const QString &filename)
         session.endList();
         session.close();
         std::cerr << os.str();
-        FileList dirContents = parseDirectoryContents(os, _isWindows);
+        NodeList dirContents = parseDirectoryContents(os, _isWindows);
         return dirContents->count() > 0;
     }
     catch (Poco::Net::FTPException &ex)
@@ -316,7 +318,7 @@ bool FtpManager::changeDirectory(const QString &remoteDir)
     return false;
 }
 
-FileList FtpManager::parseDirectoryContents(std::ostringstream &content, bool isWindows)
+NodeList FtpManager::parseDirectoryContents(std::ostringstream &content, bool isWindows)
 {
     if (isWindows)
         return parseDirectoryContentsWindows(content);
@@ -324,11 +326,11 @@ FileList FtpManager::parseDirectoryContents(std::ostringstream &content, bool is
         return parseDirectoryContentsLinux(content);
 }
 
-FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
+NodeList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
 {
     std::stringstream ss;
     ss << content.str();
-    FileList res = FileList::create();
+    NodeList res = NodeList::create();
 
 
     std::string line;
@@ -370,20 +372,29 @@ FileList FtpManager::parseDirectoryContentsLinux(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         month  << ", " <<  day  << ", " <<  time << ", " <<  filename;
 
-            (*res)[filename] = FilePtr::create(filename);
-            (*res)[filename]->setFileData(permissions, user, size.toUInt(),
-                                            month + "-" + day, time);
+            if (!permissions.startsWith('d'))
+            {
+                FilePtr f = FilePtr::create(filename);
+                f->setFileData(permissions, user, size.toUInt(),
+                               month + "-" + day, time);
+
+                (*res)[filename] = f;
+            }
+            else
+            {
+                (*res)[filename] = FolderPtr::create(filename);
+            }
         }
     }
 
     return res;
 }
 
-FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
+NodeList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
 {
     std::stringstream ss;
     ss << content.str();
-    FileList res = FileList::create();
+    NodeList res = NodeList::create();
 
 
     std::string line;
@@ -421,9 +432,18 @@ FileList FtpManager::parseDirectoryContentsWindows(std::ostringstream &content)
                      << ", " <<  group  << ", " <<  size  << ", " <<
                         ", " <<  time << ", " <<  filename;
 
-            (*res)[filename] = FilePtr::create(filename);
-            (*res)[filename]->setFileData(permissions, user, size.toUInt(),
-                                          date, time);
+            if (!permissions.startsWith('d'))
+            {
+                FilePtr f = FilePtr::create(filename);
+                f->setFileData(permissions, user, size.toUInt(),
+                               date, time);
+                (*res)[filename] = f;
+            }
+            else
+            {
+                FolderPtr f = FolderPtr::create(filename);
+                (*res)[filename] = f;
+            }
         }
     }
 

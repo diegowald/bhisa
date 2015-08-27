@@ -36,7 +36,7 @@ signals:
     void fileUploaded(const QString &remoteDir, const QString &filename);
     void fileDeleted(const QString &remoteDir, const QString &filename);
 
-    void getDirectoryContentsDownloaded(const QString &remoteDir, FileList dirContents);
+    void getDirectoryContentsDownloaded(const QString &remoteDir, NodePtr dirContents);
     void directoryCreated(const QString &remoteDir, const QString &directoryName);
     void directoryDeleted(const QString &remoteDir);
     void directoryChanged(const QString &remoteDir);
@@ -70,7 +70,7 @@ private:
     void internal_uploadFile(const QString &remoteDir, const QString &filename);
     void internal_deleteFile(const QString &remoteDir, const QString &filename);
 
-    FileList internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder);
+    NodeList internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder);
     void internal_createDirectory(const QString &remoteDir, const QString &directoryName);
     void internal_deleteDirectory(const QString &remoteDir);
     void internal_changeDirectory(const QString &remoteDir);

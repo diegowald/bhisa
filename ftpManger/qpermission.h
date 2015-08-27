@@ -37,6 +37,7 @@ private:
 };
 
 
+Q_DECLARE_METATYPE(QPermission::PERMIT);
 
 typedef QList<QPermission> QPermissionList;
 
