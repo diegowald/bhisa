@@ -75,7 +75,7 @@ void MainWindow::on_getDirectoryContentsDownloaded(const QString &remoteDir, Nod
     QTreeWidgetItem *item = ui->treeWidget->currentItem();
     qDeleteAll(item->takeChildren());
     FolderPtr parentFolder = qSharedPointerCast<Folder>(dirContents);
-    foreach (NodePtr node, parentFolder->childNodes())
+    foreach (NodePtr node, *parentFolder->childNodes())
     {
         if (node->isFolder())
         {

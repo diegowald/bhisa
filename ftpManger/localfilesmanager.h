@@ -70,7 +70,7 @@ private:
     void internal_uploadFile(const QString &remoteDir, const QString &filename);
     void internal_deleteFile(const QString &remoteDir, const QString &filename);
 
-    NodeList internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder);
+    NodePtr internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder);
     void internal_createDirectory(const QString &remoteDir, const QString &directoryName);
     void internal_deleteDirectory(const QString &remoteDir);
     void internal_changeDirectory(const QString &remoteDir);

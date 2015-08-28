@@ -18,16 +18,16 @@ bool Node::isFolder() const
 
 void Node::setPermissions(QPermissionList &permissions)
 {
-    _permissionList = permissions;
+    _permissions = permissions;
 }
 
 QPermission::PERMIT Node::myPermission(const QString &userName)
 {
-    if (_permissionList.count() == 0)
+    if (_permissions.count() == 0)
         return QPermission::PERMIT::Administrator;
 
     QString s = userName.toLower();
-    foreach (QPermission permission, _permissionList)
+    foreach (QPermission permission, _permissions)
     {
         if (permission.user().toLower() == s)
         {

@@ -12,12 +12,13 @@ class Folder : public Node
 public:
     explicit Folder(const QString &filename, QObject *parent = 0);
 
-    QList<FolderPtr> childNodes();
+    NodeList childNodes();
+    void addChild(NodeList child);
 signals:
 
 public slots:
 private:
-    QList<FolderPtr> _childNodes;
+    NodeList _childNodes;
 };
 
 typedef QSharedPointer<Folder> FolderPtr;

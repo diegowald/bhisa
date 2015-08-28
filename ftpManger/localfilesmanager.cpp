@@ -62,7 +62,7 @@ QString LocalFilesManager::getCurrentDirectory()
 
 void LocalFilesManager::getDirectoryContents(const QString &remoteDir)
 {
-    QFuture<NodeList> future = QtConcurrent::run(this, &LocalFilesManager::internal_getDirectoryContents, remoteDir, _ftpSessionFolder);
+    QFuture<NodePtr> future = QtConcurrent::run(this, &LocalFilesManager::internal_getDirectoryContents, remoteDir, _ftpSessionFolder);
 }
 
 void LocalFilesManager::createDirectory(const QString &remoteDir, const QString &directoryName)
@@ -221,17 +221,17 @@ void LocalFilesManager::importFolder(const QString &localFolder, const QString &
 
 void LocalFilesManager::internal_exportFolder(const QString &remoteFolder, const QString &localFolder)
 {
-    NodeList list = internal_getDirectoryContents(remoteFolder, localFolder);
-    foreach (FilePtr file, *list)
+    FolderPtr folder = qSharedPointerCast<Folder>(internal_getDirectoryContents(remoteFolder, localFolder));
+    foreach (NodePtr node, *folder->childNodes())
     {
-        if (file->isFolder())
+        if (node->isFolder())
         {
-            QString rFolder = remoteFolder + "/" + file->filename();
+            QString rFolder = remoteFolder + "/" + node->filename();
             internal_exportFolder(rFolder, localFolder);
         }
-        else if (!isControlFile(file->filename()))
+        else if (!isControlFile(node->filename()))
         {
-            _ftpManager.downloadFile(remoteFolder, file->filename(), localFolder);
+            _ftpManager.downloadFile(remoteFolder, node->filename(), localFolder);
         }
     }
     if (localFolder == _exportFolder)
@@ -320,8 +320,9 @@ void LocalFilesManager::internal_deleteFile(const QString &remoteDir, const QStr
 }
 
 
-NodeList LocalFilesManager::internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder)
+NodePtr LocalFilesManager::internal_getDirectoryContents(const QString &remoteDir, const QString &localFolder)
 {
+    FolderPtr thisFolder = FolderPtr::create(remoteDir);
     NodeList dirContents = _ftpManager.getDirectoryContents(remoteDir, _ftpSessionFolder);
     NodeList contentsProcessed = NodeList::create();
     foreach (NodePtr node, *dirContents)
@@ -385,23 +386,27 @@ NodeList LocalFilesManager::internal_getDirectoryContents(const QString &remoteD
         }
         else
         {
-            FilePtr f
+            FilePtr f;
             if (!contentsProcessed->contains(node->filename()))
             {
                 (*contentsProcessed)[node->filename()] = FilePtr::create(node->filename());
             }
-            (*contentsProcessed)[node->filename()]->setFileData(node->permissions(),
-                                                                node->owner(),
-                                                                node->size(),
-                                                                node->date(),
-                                                                node->time());
+            f = qSharedPointerCast<File>((*contentsProcessed)[node->filename()]);
+            FilePtr otherFile = FilePtr::create(node->filename());
+
+            f->setFileData(otherFile->permissions(),
+                           otherFile->owner(),
+                           otherFile->size(),
+                           otherFile->date(),
+                           otherFile->time());
         }
     }
+    thisFolder->addChild(contentsProcessed);
     if ((_exportFolder.length() == 0) ||  !localFolder.startsWith(_exportFolder))
     {
-        emit getDirectoryContentsDownloaded(remoteDir, contentsProcessed);
+        emit getDirectoryContentsDownloaded(remoteDir, thisFolder);
     }
-    return contentsProcessed;
+    return thisFolder;
 }
 
 void LocalFilesManager::internal_deleteDirectory(const QString &remoteDir)
